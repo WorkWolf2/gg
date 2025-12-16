@@ -30,7 +30,7 @@ dependencies {
 
     implementation("com.tcoded:FoliaLib:0.5.1")
 
-    compileOnly 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.zaxxer:HikariCP:5.1.0'
 
     compileOnly 'me.clip:placeholderapi:2.11.7'
     compileOnly files("libs/HypingTeams-1.2.1.jar")
@@ -43,6 +43,7 @@ shadowJar {
     archiveClassifier.set('')
 
     relocate("com.tcoded.folialib", "com.minegolem.hypingNations.lib.folialib")
+    relocate 'com.zaxxer.hikari', 'com.minegolem.hypingNations.lib.hikari'
 }
 
 tasks.build.dependsOn shadowJar
