@@ -27,6 +27,12 @@ public class DatabaseManager implements AutoCloseable {
      * Initialize database connection
      */
     public void initialize() throws SQLException {
+        try {
+            Class.forName("org.mariadb.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         HikariConfig config = new HikariConfig();
 
         String host = plugin.getConfig().getString("database.mariadb.host", "localhost");

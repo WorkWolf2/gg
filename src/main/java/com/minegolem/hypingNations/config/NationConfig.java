@@ -19,6 +19,8 @@ public class NationConfig {
     private String taxChargeSource;
 
     // RANGE
+    // Base range applies to ALL roles unless overridden
+    // Role-specific ranges (if configured) take precedence over base range
     private int baseRecruitRange;
     private int perCityBonusRange;
 
@@ -28,6 +30,8 @@ public class NationConfig {
     private boolean blockOverclaimWithPact;
 
     // OVERCLAIM
+    // When false: prevents nation members from overclaiming other nations' claims
+    // When true: allows overclaiming (unless blocked by pacts)
     private boolean overclaimEnabled;
 
     // STRUCTURE - Roles
@@ -81,47 +85,68 @@ public class NationConfig {
         ConfigurationSection roles = structure.getConfigurationSection("roles");
         assert roles != null;
         ConfigurationSection nationRoles = roles.getConfigurationSection("nation");
-        ConfigurationSection cityRoles = roles.getConfigurationSection("city");
 
         assert nationRoles != null;
         this.chiefRole = new RoleConfig(Objects.requireNonNull(nationRoles.getConfigurationSection("chief")));
-
-        assert cityRoles != null;
-        this.mayorRole = new RoleConfig(Objects.requireNonNull(cityRoles.getConfigurationSection("mayor")));
-        this.deputyMayorRole = new RoleConfig(Objects.requireNonNull(cityRoles.getConfigurationSection("deputy_mayor")));
+        this.mayorRole = new RoleConfig(Objects.requireNonNull(nationRoles.getConfigurationSection("mayor")));
+        this.deputyMayorRole = new RoleConfig(Objects.requireNonNull(nationRoles.getConfigurationSection("deputy_mayor")));
     }
 
+    /**
+     * Role configuration for nation-specific permissions
+     * These are ONLY for nation operations (inviting cities, managing pacts, etc.)
+     * For regular team operations (build, break, claim), use HypingTeams /team role
+     */
     @Getter
     public static class RoleConfig {
         private final String displayName;
+
+        // Nation management permissions
+        private final boolean canInviteCityToNation;
         private final boolean canAcceptCity;
         private final boolean canRemoveCity;
-        private final boolean canCreatePact;
+
+        // Diplomacy permissions
+        private final boolean canProposePact;
+        private final boolean canCreatePact;  // Accept pacts
         private final boolean canBreakPact;
-        private final int maxPactDurationDays;
+
+        // Leadership permissions
         private final boolean canTransferLeadership;
         private final boolean canDeleteNation;
+
+        // Player management (within nation context)
         private final boolean canInvitePlayer;
         private final boolean canKickPlayer;
-        private final boolean canInviteCityToNation;
+
+        // Role-specific settings
+        private final int maxPactDurationDays;
+
+        // Role-specific range override (if 0, uses base range)
+        // This allows different roles to have different invitation ranges
         private final int inviteCityRangeBlocks;
-        private final boolean canProposePact;
 
         public RoleConfig(ConfigurationSection section) {
             this.displayName = section.getString("display_name", "Role");
 
+            this.canInviteCityToNation = section.getBoolean("permissions.can_invite_city_to_nation", false);
             this.canAcceptCity = section.getBoolean("permissions.can_accept_city", false);
             this.canRemoveCity = section.getBoolean("permissions.can_remove_city", false);
+
+            this.canProposePact = section.getBoolean("permissions.can_propose_pact", false);
             this.canCreatePact = section.getBoolean("permissions.can_create_pact", false);
             this.canBreakPact = section.getBoolean("permissions.can_break_pact", false);
+
             this.maxPactDurationDays = section.getInt("permissions.max_pact_duration_days", 30);
+
             this.canTransferLeadership = section.getBoolean("permissions.can_transfer_leadership", false);
             this.canDeleteNation = section.getBoolean("permissions.can_delete_nation", false);
+
             this.canInvitePlayer = section.getBoolean("permissions.can_invite_player", false);
             this.canKickPlayer = section.getBoolean("permissions.can_kick_player", false);
-            this.canInviteCityToNation = section.getBoolean("permissions.can_invite_city_to_nation", false);
-            this.inviteCityRangeBlocks = section.getInt("permissions.invite_city_range_blocks", 1000);
-            this.canProposePact = section.getBoolean("permissions.can_propose_pact", false);
+
+            // If 0, will use base range from config
+            this.inviteCityRangeBlocks = section.getInt("permissions.invite_city_range_blocks", 0);
         }
     }
 }

@@ -5,7 +5,9 @@ import com.minegolem.hypingNations.config.ConfigManager;
 import com.minegolem.hypingNations.data.database.DatabaseManager;
 import com.minegolem.hypingNations.listener.TeamClaimListener;
 import com.minegolem.hypingNations.manager.*;
+import com.minegolem.hypingNations.service.DatabasePersistenceService;
 import com.minegolem.hypingNations.service.PersistenceService;
+import com.minegolem.hypingNations.task.BackupTask;
 import com.minegolem.hypingNations.task.InvitationCleanupTask;
 import com.minegolem.hypingNations.task.NationTaxTask;
 import com.minegolem.hypingNations.task.PactCleanupTask;
@@ -24,6 +26,7 @@ public final class HypingNations extends JavaPlugin {
     private MessageManager messageManager;
     private FoliaLib foliaLib;
     private DatabaseManager databaseManager;
+    private DatabasePersistenceService persistenceService;
 
     private NationManager nationManager;
     private TaxManager taxManager;
@@ -73,6 +76,9 @@ public final class HypingNations extends JavaPlugin {
                 databaseManager = new DatabaseManager(this);
                 databaseManager.initialize();
 
+                // Initialize persistence service with database
+                persistenceService = new DatabasePersistenceService(databaseManager, this);
+
                 return true;
             } catch (Exception e) {
                 getLogger().severe("Failed to initialize MariaDB: " + e.getMessage());
@@ -81,13 +87,14 @@ public final class HypingNations extends JavaPlugin {
             }
         } else {
             getLogger().severe("Invalid database type: " + dbType);
-            getLogger().severe("Only 'mariadb' is supported. JSON support has been removed.");
+            getLogger().severe("Only 'mariadb' is supported.");
             return false;
         }
     }
 
     private void initManagers() {
-        nationManager = new NationManager(this);
+        nationManager = new NationManager();
+        nationManager.setPersistenceService(persistenceService);
 
         double perChunkPrice = configManager.getNationConfig().getTaxPerChunk();
         int maxUnpaidDays = configManager.getNationConfig().getMaxUnpaidDays();
@@ -95,13 +102,13 @@ public final class HypingNations extends JavaPlugin {
 
         pactManager = new PactManager();
         rangeManager = new RangeManager(configManager.getNationConfig());
-        invitationManager = new InvitationManager(30); // 30 minutes expiration
+        invitationManager = new InvitationManager(30);
     }
 
     private void loadData() {
         try {
             nationManager.loadNations();
-            getLogger().info("Data loaded successfully");
+            getLogger().info("Data loaded successfully from database");
         } catch (Exception e) {
             getLogger().severe("Failed to load data: " + e.getMessage());
             e.printStackTrace();
@@ -111,7 +118,7 @@ public final class HypingNations extends JavaPlugin {
     private void saveData() {
         try {
             nationManager.saveNations();
-            getLogger().info("Data saved successfully");
+            getLogger().info("Data saved successfully to database");
         } catch (Exception e) {
             getLogger().severe("Failed to save data: " + e.getMessage());
             e.printStackTrace();
@@ -153,8 +160,8 @@ public final class HypingNations extends JavaPlugin {
 
             foliaLib.getScheduler().runTimerAsync(
                     backupTask,
-                    20L * 60 * 60 * intervalHours, // Initial delay
-                    20L * 60 * 60 * intervalHours  // Repeat interval
+                    20L * 60 * 60 * intervalHours,
+                    20L * 60 * 60 * intervalHours
             );
 
             getLogger().info("Backup task started (every " + intervalHours + " hours)");

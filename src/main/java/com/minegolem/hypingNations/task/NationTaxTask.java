@@ -1,6 +1,7 @@
 package com.minegolem.hypingNations.task;
 
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.manager.MessageManager;
 import com.minegolem.hypingNations.manager.NationManager;
 import com.minegolem.hypingNations.manager.TaxManager;
 import com.tcoded.folialib.FoliaLib;

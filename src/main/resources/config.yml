@@ -1,7 +1,7 @@
-# Database Configuration
+
 database:
-  type: "mariadb" # mariadb or json (legacy)
-  
+  type: "mariadb" # Only mariadb is supported
+
   # MariaDB Settings
   mariadb:
     host: "localhost"
@@ -9,26 +9,26 @@ database:
     database: "hypingnations"
     username: "minecraft"
     password: "password"
-    
+
     # Connection Pool Settings
     pool:
       minimum-idle: 2
       maximum-pool-size: 10
-      connection-timeout: 30000 # milliseconds
-      idle-timeout: 600000 # 10 minutes
-      max-lifetime: 1800000 # 30 minutes
-  
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
   # Backup Settings
   backup:
     enabled: true
     interval-hours: 6
-    keep-backups: 7 # Number of backups to keep
+    keep-backups: 7
 
 # Nation System Configuration
 nation-system:
   economy:
     creation:
-      minimum-member: 3
+      minimum-member:
       minimum-claim: 10
       price: 10000
 
@@ -37,77 +37,114 @@ nation-system:
       collection_period: "daily"
       per_chunk_price: 150.0
       max_unpaid_days_before_dissolution: 7
-      charge_source: "capital" # "capital" or "treasury"
+      charge_source: "capital"
 
-  # Range System
-  # base_recruit_range_blocks: Base range for inviting cities
-  # per_city_bonus_range_blocks: Additional range per city in the nation
-  # The effective range is: base + (number_of_cities - 1) * per_city_bonus
+  # ============================================================
+  # RANGE SYSTEM EXPLANATION
+  # ============================================================
+  # The range system determines how far a nation can recruit cities.
+  #
+  # PRECEDENCE:
+  # 1. If a role has invite_city_range_blocks > 0: uses role-specific range
+  # 2. Otherwise: uses base_recruit_range_blocks + bonuses
+  #
+  # CALCULATION:
+  # Effective Range = base_recruit_range_blocks + (number_of_cities - 1) * per_city_bonus_range_blocks
+  #
+  # EXAMPLE:
+  # - base: 1000 blocks
+  # - per_city_bonus: 500 blocks
+  # - Nation with 3 cities: 1000 + (3-1)*500 = 2000 blocks range
+  #
+  # If chief role has invite_city_range_blocks: 10000, chief can invite from 10000 blocks
+  # If mayor role has invite_city_range_blocks: 0, mayor uses calculated range (2000 blocks)
+  # ============================================================
   range:
     base_recruit_range_blocks: 1000
     per_city_bonus_range_blocks: 500
 
-  # Diplomacy System
   diplomacy:
     pacts:
       enabled: true
       max_duration_days: 30
-      # When true, nations with active pacts cannot overclaim each other
+      # When true: nations with active pacts CANNOT overclaim each other
+      # When false: pacts don't prevent overclaiming
       block_overclaim_between_partners: true
 
-  # Overclaim System
-  # When enabled, nations can overclaim abandoned/lost claims from other nations
-  # This is independent from HypingTeams overclaim system
+  # ============================================================
+  # OVERCLAIM SYSTEM EXPLANATION
+  # ============================================================
+  # This setting controls whether nations can overclaim OTHER nations' territory.
+  # This is SEPARATE from HypingTeams' overclaim system.
+  #
+  # enabled: true  = Nations CAN overclaim other nations (unless blocked by pacts)
+  # enabled: false = Nations CANNOT overclaim other nations at all
+  #
+  # NOTE: HypingTeams overclaim (lost claims) still works independently.
+  # This only affects nation-to-nation overclaiming.
+  # ============================================================
   overclaim:
     enabled: false
 
-  # Roles and Permissions
-  # These permissions are checked IN ADDITION to HypingTeams roles
-  # You should configure HypingTeams roles for basic team management
-  # and use these for nation-specific permissions
   structure:
     roles:
-      # Nation Chief - automatically assigned to nation creator
-      chief:
-        display_name: "Chief"
-        permissions:
-          can_invite_city_to_nation: true
-          can_remove_city_from_nation: true
-          can_propose_pact: true
-          can_accept_pact: true
-          can_break_pact: true
-          can_transfer_leadership: true
-          can_delete_nation: true
-          can_manage_treasury: true
-          can_set_taxes: true
-      
-      # City Mayor - automatically assigned to team owners in the nation
-      # These are additional permissions ON TOP of their HypingTeams role
-      mayor:
-        display_name: "Mayor"
-        permissions:
-          can_invite_city_to_nation: false
-          can_remove_city_from_nation: false
-          can_propose_pact: false
-          can_accept_pact: false
-          can_break_pact: false
-          can_transfer_leadership: false
-          can_delete_nation: false
-          can_manage_treasury: false
-          can_set_taxes: false
+      nation:
+        # Chief - Automatically assigned to nation creator
+        chief:
+          display_name: "Chief"
+          permissions:
+            can_invite_city_to_nation: true
+            can_remove_city_from_nation: true
+            can_propose_pact: true
+            can_accept_pact: true
+            can_break_pact: true
+            can_transfer_leadership: true
+            can_delete_nation: true
+            can_manage_treasury: true
+            can_set_taxes: true
+            # Override range: 0 = use calculated range, >0 = use this specific range
+            invite_city_range_blocks: 0
 
-# Messages Configuration
+        # Mayor - Automatically assigned to team owners when city joins nation
+        mayor:
+          display_name: "Mayor"
+          permissions:
+            can_invite_city_to_nation: false
+            can_remove_city_from_nation: false
+            can_propose_pact: false
+            can_accept_pact: false
+            can_break_pact: false
+            can_transfer_leadership: false
+            can_delete_nation: false
+            can_manage_treasury: false
+            can_set_taxes: false
+            invite_city_range_blocks: 0
+
+        # Deputy Mayor - Automatically assigned to deputy mayors in member cities
+        deputy_mayor:
+          display_name: "Deputy Mayor"
+          permissions:
+            can_invite_city_to_nation: false
+            can_remove_city_from_nation: false
+            can_propose_pact: false
+            can_accept_pact: false
+            can_break_pact: false
+            can_transfer_leadership: false
+            can_delete_nation: false
+            can_manage_treasury: false
+            can_set_taxes: false
+            invite_city_range_blocks: 0
+
+# Messages
 messages:
   prefix: "§8[§6HNations§8]§r "
-  
-  # General Messages
+
   general:
     no-permission: "{prefix}§cYou don't have permission to do this!"
     player-only: "{prefix}§cOnly players can use this command!"
     unknown-command: "{prefix}§cUnknown command. Use §f/hnations help §cfor help."
     reload-success: "{prefix}§aConfiguration reloaded successfully!"
 
-  # Nation Creation
   creation:
     success: |
       §8§m                                                
@@ -116,7 +153,7 @@ messages:
       §7Your nation §e{nation_name} §7has been created!
       §7Capital: §f{capital_name}
       §7You are now the §6Chief §7of your nation.
-      §8§m                                                
+      §8§m
     must-be-in-team: "{prefix}§cYou must be in a city to create a nation!"
     must-be-owner: "{prefix}§cOnly the mayor can create a nation!"
     already-in-nation: "{prefix}§cYour city is already part of a nation!"
@@ -125,7 +162,6 @@ messages:
     not-enough-claims: "{prefix}§cYour city needs at least §e{min_claims} §cclaimed chunks! (Currently: §e{current_claims}§c)"
     not-enough-money: "{prefix}§cYour city needs §e${creation_price} §cto create a nation!"
 
-  # Nation Info
   info:
     not-in-nation: "{prefix}§cYou are not part of any nation!"
     display: |
@@ -149,11 +185,10 @@ messages:
       
       §a§lInfluence:
       §7Recruitment Range: §f{effective_range} blocks
-      §8§m                                                
+      §8§m
     allies-header: "§7Allies:"
     ally-entry: "  §f- {ally_name}"
 
-  # City Invitations
   invitation:
     sent: |
       {prefix}§aInvitation sent to §e{city_name}§a!
@@ -167,7 +202,7 @@ messages:
       
       §7Use §f/hnations acceptcity §7to accept
       §7This invitation expires in §e30 minutes§7.
-      §8§m                                                
+      §8§m
     must-be-owner: "{prefix}§cOnly the mayor can manage nation invitations!"
     city-not-found: "{prefix}§cCity not found: §e{city_name}"
     already-in-nation: "{prefix}§cThat city is already part of a nation!"
@@ -181,7 +216,6 @@ messages:
     accept-notify-chief: "{prefix}§aThe city §e{city_name} §ahas joined your nation!"
     accept-failed: "{prefix}§cFailed to join nation. Please contact an administrator."
 
-  # Leaving Nation
   leave:
     success: "{prefix}§aYour city has left the nation §e{nation_name}§a!"
     notify-chief: "{prefix}§cThe city §e{city_name} §chas left your nation!"
@@ -193,11 +227,10 @@ messages:
       §7Use §f/hnations delete §7to disband the nation.
     failed: "{prefix}§cFailed to leave nation. Please contact an administrator."
 
-  # Pacts
   pact:
     usage: "{prefix}§cUsage: /hnations pact <propose|accept|deny|break> ..."
     unknown-action: "{prefix}§cUnknown action. Use: propose, accept, deny, break"
-    
+
     propose:
       usage: "{prefix}§cUsage: /hnations pact propose <nation> <days>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
@@ -217,7 +250,7 @@ messages:
         §7§f/hnations pact accept {proposer_nation}
         §7§f/hnations pact deny {proposer_nation}
         §8§m                                                
-    
+
     accept:
       usage: "{prefix}§cUsage: /hnations pact accept <nation>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
@@ -230,7 +263,7 @@ messages:
         {prefix}§a{target_nation} §aaccepted your pact proposal!
         §7You are now allies and cannot overclaim each other.
       no-pending: "{prefix}§cNo pending pact from that nation!"
-    
+
     deny:
       usage: "{prefix}§cUsage: /hnations pact deny <nation>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
@@ -238,7 +271,7 @@ messages:
       success: "{prefix}§cPact denied from §e{nation_name}§c!"
       notify-proposer: "{prefix}§c{target_nation} §cdenied your pact proposal!"
       no-pending: "{prefix}§cNo pending pact from that nation!"
-    
+
     break:
       usage: "{prefix}§cUsage: /hnations pact break <nation>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
@@ -251,7 +284,7 @@ messages:
         
         §7Your nation has broken the pact with §e{nation_name}
         §7You can now overclaim their territory.
-        §8§m                                                
+        §8§m
       notify-target: |
         §8§m                                                
         §c§lPact Broken!
@@ -259,10 +292,9 @@ messages:
         §e{initiator_nation} §7has broken their pact
         §7with your nation!
         §7They can now overclaim your territory.
-        §8§m                                                
+        §8§m
       failed: "{prefix}§cFailed to break pact. Please contact an administrator."
-  
-  # Tax Information
+
   tax:
     not-in-nation: "{prefix}§cYou are not part of any nation!"
     display: |
@@ -278,11 +310,10 @@ messages:
       
       §7Next Collection: §fDaily at midnight
       §7Source: §fCapital city balance
-      §8§m                                                
+      §8§m
     warning: "§c⚠ Warning: Nation will dissolve in {remaining_days} days!"
     up-to-date: "§a✓ Tax payments are up to date"
-  
-  # Claim Protection
+
   claim:
     blocked: |
       §8§m                                                
@@ -295,11 +326,10 @@ messages:
       §7To claim this territory, your nation chief must
       §7first break the pact using §f/hnations pact break
       §8§m                                                
-  
-  # Help
+
   help:
     header: |
       §8§m                                                
       §6§lHypingNations Commands
 
-    footer: "§8§m            
+    footer: "§8§m"
