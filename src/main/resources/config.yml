@@ -1,0 +1,78 @@
+nation-system:
+  economy:
+    creation:
+      minimum-member: 3
+      minimum-claim: 10
+      price: 10000
+
+    tax:
+      enabled: true
+      collection_period: "daily"
+      per_chunk_price: 150.0
+      max_unpaid_days_before_dissolution: 7
+      charge_source: "capital"
+
+  range:
+    base_recruit_range_blocks: 1000
+    per_city_bonus_range_blocks: 500
+
+  diplomacy:
+    pacts:
+      enabled: true
+      max_duration_days: 30
+      block_overclaim_between_partners: true
+
+  overclaim:
+    enabled: false
+
+  structure:
+    roles:
+      nation:
+        chief:
+          display_name: "Chief"
+          permissions:
+            can_accept_city: true
+            can_remove_city: true
+            can_create_pact: true
+            can_break_pact: true
+            max_pact_duration_days: 30
+            can_transfer_leadership: true
+            can_delete_nation: true
+            can_invite_player: false
+            can_kick_player: false
+            can_invite_city_to_nation: true
+            invite_city_range_blocks: 10000
+            can_propose_pact: true
+
+      city:
+        mayor:
+          display_name: "Mayor"
+          permissions:
+            can_accept_city: false
+            can_remove_city: false
+            can_create_pact: false
+            can_break_pact: false
+            max_pact_duration_days: 0
+            can_transfer_leadership: false
+            can_delete_nation: false
+            can_invite_player: true
+            can_kick_player: true
+            can_invite_city_to_nation: true
+            invite_city_range_blocks: 5000
+            can_propose_pact: false
+
+        deputy_mayor:
+          display_name: "Deputy Mayor"
+          permissions:
+            can_accept_city: false
+            can_remove_city: false
+            can_create_pact: false
+            can_break_pact: false
+            max_pact_duration_days: 0
+            can_transfer_leadership: false
+            can_delete_nation: false
+            can_invite_player: true
+            can_kick_player: false
+            can_invite_city_to_nation: true
+            invite_city_range_blocks: 3000
+            can_propose_pact: false

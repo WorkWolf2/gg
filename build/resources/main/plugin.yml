@@ -1,0 +1,60 @@
+name: HypingNations
+version: '1.0.0'
+main: com.minegolem.hypingNations.HypingNations
+api-version: '1.21'
+authors: [ WorkWolf_2 ]
+depend: [ HypingTeams ]
+softdepend: [ PlaceholderAPI ]
+folia-supported: true
+
+commands:
+  hnations:
+    description: Main HypingNations command
+    usage: /hnations <subcommand>
+    aliases: [ hn, nation, nations ]
+
+permissions:
+  hypingnations.*:
+    description: Gives access to all HypingNations commands
+    default: op
+    children:
+      hypingnations.create: true
+      hypingnations.info: true
+      hypingnations.invitecity: true
+      hypingnations.acceptcity: true
+      hypingnations.leave: true
+      hypingnations.pact: true
+      hypingnations.tax: true
+      hypingnations.admin: true
+
+  hypingnations.create:
+    description: Create a nation
+    default: true
+
+  hypingnations.info:
+    description: View nation info
+    default: true
+
+  hypingnations.invitecity:
+    description: Invite cities to your nation
+    default: true
+
+  hypingnations.acceptcity:
+    description: Accept nation invitations
+    default: true
+
+  hypingnations.leave:
+    description: Leave your nation
+    default: true
+
+  hypingnations.pact:
+    description: Manage diplomatic pacts
+    default: true
+
+  hypingnations.tax:
+    description: View tax information
+    default: true
+
+  hypingnations.admin:
+    description: Admin commands
+    default: op
