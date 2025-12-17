@@ -5,6 +5,7 @@ import com.minegolem.hypingNations.config.ConfigManager;
 import com.minegolem.hypingNations.data.database.DatabaseManager;
 import com.minegolem.hypingNations.listener.TeamClaimListener;
 import com.minegolem.hypingNations.manager.*;
+import com.minegolem.hypingNations.role.NationPermissionManager;
 import com.minegolem.hypingNations.service.DatabasePersistenceService;
 import com.minegolem.hypingNations.service.PersistenceService;
 import com.minegolem.hypingNations.task.BackupTask;
@@ -33,6 +34,9 @@ public final class HypingNations extends JavaPlugin {
     private PactManager pactManager;
     private RangeManager rangeManager;
     private InvitationManager invitationManager;
+
+    // NUOVO: Manager per i permessi integrato con HypingTeams
+    private NationPermissionManager permissionManager;
 
     @Override
     public void onEnable() {
@@ -103,6 +107,9 @@ public final class HypingNations extends JavaPlugin {
         pactManager = new PactManager();
         rangeManager = new RangeManager(configManager.getNationConfig());
         invitationManager = new InvitationManager(30);
+
+        // NUOVO: Inizializza il manager dei permessi
+        permissionManager = new NationPermissionManager(this);
     }
 
     private void loadData() {
@@ -202,6 +209,7 @@ public final class HypingNations extends JavaPlugin {
         taxManager = new TaxManager(perChunkPrice, maxUnpaidDays);
 
         rangeManager = new RangeManager(configManager.getNationConfig());
+        permissionManager = new NationPermissionManager(this);
 
         getLogger().info("Configuration reloaded!");
     }

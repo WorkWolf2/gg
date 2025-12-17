@@ -7,6 +7,7 @@ import com.minegolem.hypingNations.manager.PactManager;
 import org.bukkit.entity.Player;
 
 import java.text.DecimalFormat;
+import java.util.List;
 
 public class InfoCommand implements SubCommand {
     private final HypingNations plugin;
@@ -32,6 +33,11 @@ public class InfoCommand implements SubCommand {
         player.sendMessage("§7Capital: §f" + nation.getCapital().teamName());
         player.sendMessage("§7Member Cities: §f" + nation.getMemberCities().size());
         player.sendMessage("§7Total Members: §f" + nation.getAllMembers().size());
+        player.sendMessage("");
+
+        // AGGIORNATO: Mostra il ruolo usando il nuovo sistema
+        String yourRole = plugin.getPermissionManager().getRoleDisplayName(player.getUniqueId(), nation);
+        player.sendMessage("§7Your Role: §f" + yourRole);
         player.sendMessage("");
 
         // Tax info
@@ -61,10 +67,10 @@ public class InfoCommand implements SubCommand {
         }
 
         // Range info
-        int effectiveRange = plugin.getRangeManager().calculateEffectiveRange(nation);
+        int effectiveRange = plugin.getPermissionManager().getInviteRange(player.getUniqueId(), nation);
         player.sendMessage("");
         player.sendMessage("§a§lInfluence:");
-        player.sendMessage("§7Recruitment Range: §f" + effectiveRange + " blocks");
+        player.sendMessage("§7Your Recruitment Range: §f" + effectiveRange + " blocks");
 
         player.sendMessage("§8§m                                                ");
     }

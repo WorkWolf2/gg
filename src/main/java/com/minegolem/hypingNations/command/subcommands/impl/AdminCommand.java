@@ -4,6 +4,9 @@ import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 public class AdminCommand implements SubCommand {
 
     private final HypingNations plugin;
@@ -52,5 +55,15 @@ public class AdminCommand implements SubCommand {
     @Override
     public String getPermission() {
         return "hypingnations.admin";
+    }
+
+    @Override
+    public List<String> onTabComplete(Player player, String[] args) {
+        if (args.length == 1) {
+            return Stream.of("reload")
+                    .filter(s -> s.startsWith(args[0].toLowerCase()))
+                    .toList();
+        }
+        return List.of();
     }
 }

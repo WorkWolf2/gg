@@ -2,7 +2,6 @@ package com.minegolem.hypingNations.data;
 
 import com.minegolem.hypingNations.data.CityRef;
 import com.minegolem.hypingNations.manager.PactManager;
-import com.minegolem.hypingNations.role.NationRolesManager;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,7 +16,6 @@ public class Nation {
     private UUID chief;
     private CityRef capital;
     private final Set<CityRef> memberCities = new HashSet<>();
-    private final NationRolesManager rolesManager = new NationRolesManager();
 
     private final Map<UUID, PactManager.Pact> activePacts = new HashMap<>();
 
@@ -32,8 +30,6 @@ public class Nation {
         this.capital = capital;
 
         memberCities.add(capital);
-
-        rolesManager.assignRole(chief, "chief");
     }
 
     public Nation(String name, UUID chief, CityRef capital) {

@@ -63,8 +63,6 @@ public class AcceptCityCommand implements SubCommand {
         if (success) {
             player.sendMessage("§aYour city §e" + playerTeam.getName() + " §ahas joined the nation §e" + nationName + "§a!");
 
-            nation.getRolesManager().assignRole(player.getUniqueId(), "mayor");
-
             Player chief = plugin.getServer().getPlayer(nation.getChief());
             if (chief != null && chief.isOnline()) {
                 chief.sendMessage("§aThe city §e" + playerTeam.getName() + " §ahas joined your nation!");
@@ -87,10 +85,5 @@ public class AcceptCityCommand implements SubCommand {
     @Override
     public String getUsage() {
         return "/hnations acceptcity";
-    }
-
-    @Override
-    public List<String> onTabComplete(Player player, String[] args) {
-        return List.of();
     }
 }

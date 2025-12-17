@@ -5,85 +5,137 @@ import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.manager.ClaimManager;
 import dev.canable.hypingteams.object.Claim;
 import dev.canable.hypingteams.object.Team;
+import dev.canable.hypingteams.object.claim.Chunk;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public record CityRef(String teamName) {
 
-    public CityRef {
-        if (TeamAPI.getTeamByName(teamName) == null) {
-            throw new IllegalArgumentException("Team does not exist: " + teamName);
-        }
+    /* -------------------------------------------------------
+       TEAM ACCESS
+       ------------------------------------------------------- */
+
+    public Optional<Team> getTeam() {
+        return Optional.ofNullable(TeamAPI.getTeamByName(teamName));
     }
 
-    public Team getTeam() {
-        return TeamAPI.getTeamByName(teamName);
+    public boolean exists() {
+        return getTeam().isPresent();
     }
 
-    public UUID getMayorUUID() {
-        return getTeam().getOwner();
+    /* -------------------------------------------------------
+       ROLES
+       ------------------------------------------------------- */
+
+    public Optional<UUID> getMayorUUID() {
+        return getTeam().map(Team::getOwner);
     }
 
     public Set<UUID> getDeputyUUIDs() {
-        Set<UUID> deputies = new HashSet<>();
+        return getTeam()
+                .map(team -> {
+                    Set<UUID> deputies = new HashSet<>();
+                    team.getRoleMembers().forEach((uuid, roleMember) -> {
+                        if (roleMember.hasRole("deputy_mayor")) {
+                            deputies.add(uuid);
+                        }
+                    });
+                    return deputies;
+                })
+                .orElse(Collections.emptySet());
+    }
 
-        getTeam().getRoleMembers().forEach((uuid, roleMember) -> {
-            if (roleMember.hasRole("deputy_mayor")) {
-                deputies.add(uuid);
-            }
-        });
-        return deputies;
+    public boolean isMayor(UUID player) {
+        return getMayorUUID()
+                .map(player::equals)
+                .orElse(false);
     }
 
     public boolean isDeputy(UUID player) {
         return getDeputyUUIDs().contains(player);
     }
 
-    public boolean isMayor(UUID player) {
-        return getMayorUUID().equals(player);
-    }
-
     public boolean isMember(UUID player) {
-        return getTeam().getMembers().contains(player);
-    }
-
-    public Location getLocation() {
-        return getTeam().getTeamHomes().getDefaultHome();
-    }
-
-    public int getChunksCount() {
-        Team team = getTeam();
-        if (team == null) {
-            return 0;
-        }
-
-        try {
-            HypingTeams hypingTeams = HypingTeams.getInstance();
-            if (hypingTeams == null) {
-                return 0;
-            }
-
-            ClaimManager claimManager = hypingTeams.getClaimManager();
-            if (claimManager == null) {
-                return 0;
-            }
-
-            Claim claim = claimManager.getByTeamName(teamName);
-            if (claim == null) {
-                return 0;
-            }
-
-            return claim.getChunks().size();
-
-        } catch (Exception e) {
-            return 0;
-        }
+        return getTeam()
+                .map(team -> team.getMembers().contains(player))
+                .orElse(false);
     }
 
     public Set<UUID> getAllMembers() {
-        return getTeam().getMembers();
+        return getTeam()
+                .map(Team::getMembers)
+                .orElse(Collections.emptySet());
+    }
+
+    /* -------------------------------------------------------
+       LOCATION
+       ------------------------------------------------------- */
+
+    public Optional<Location> getLocation() {
+        return getTeam()
+                .flatMap(this::getHomeLocation)
+                .or(() -> getTeam().flatMap(this::getClaimFallbackLocation));
+    }
+
+    private Optional<Location> getHomeLocation(Team team) {
+        try {
+            Location home = team.getTeamHomes().getDefaultHome();
+            if (home != null && home.getWorld() != null) {
+                return Optional.of(home);
+            }
+        } catch (Exception ignored) {
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Location> getClaimFallbackLocation(Team team) {
+        HypingTeams plugin = HypingTeams.getInstance();
+        if (plugin == null) return Optional.empty();
+
+        ClaimManager claimManager = plugin.getClaimManager();
+        if (claimManager == null) return Optional.empty();
+
+        Claim claim = claimManager.getByTeamName(team.getName());
+        if (claim == null || claim.getChunks().isEmpty()) return Optional.empty();
+
+        Chunk chunk = claim.getChunks().iterator().next();
+        World world = Bukkit.getWorld(chunk.getWorldName());
+        if (world == null) return Optional.empty();
+
+        int x = chunk.getX() * 16 + 8;
+        int z = chunk.getZ() * 16 + 8;
+
+        return Optional.of(new Location(world, x + 0.5, 64, z + 0.5));
+    }
+
+    /* -------------------------------------------------------
+       CLAIMS
+       ------------------------------------------------------- */
+
+    public int getChunksCount() {
+        HypingTeams plugin = HypingTeams.getInstance();
+        if (plugin == null) return 0;
+
+        ClaimManager claimManager = plugin.getClaimManager();
+        if (claimManager == null) return 0;
+
+        return Optional.ofNullable(claimManager.getByTeamName(teamName))
+                .map(claim -> claim.getChunks().size())
+                .orElse(0);
+    }
+
+    /* -------------------------------------------------------
+       DEBUG / SAFETY
+       ------------------------------------------------------- */
+
+    @Override
+    public String toString() {
+        return "CityRef{" +
+                "teamName='" + teamName + '\'' +
+                ", exists=" + exists() +
+                '}';
     }
 }

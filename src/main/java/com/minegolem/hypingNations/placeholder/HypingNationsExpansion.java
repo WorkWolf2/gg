@@ -54,7 +54,8 @@ public class HypingNationsExpansion extends PlaceholderExpansion {
 
             case "role":
                 if (nation == null) return "None";
-                return nation.getRolesManager().getDisplayName(player.getUniqueId());
+                // AGGIORNATO: Usa il nuovo sistema di permessi
+                return plugin.getPermissionManager().getRoleDisplayName(player.getUniqueId(), nation);
 
             case "tax_next_time":
                 if (nation == null) return "N/A";
@@ -80,7 +81,7 @@ public class HypingNationsExpansion extends PlaceholderExpansion {
 
             case "range_effective_blocks":
                 if (nation == null) return "0";
-                return String.valueOf(plugin.getRangeManager().calculateEffectiveRange(nation));
+                return String.valueOf(plugin.getPermissionManager().getInviteRange(player.getUniqueId(), nation));
 
             case "capital_name":
                 if (nation == null) return "None";

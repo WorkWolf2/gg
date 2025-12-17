@@ -98,17 +98,6 @@ public class DatabaseManager implements AutoCloseable {
                     "INDEX idx_team_name (team_name)" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
-            // Roles table
-            String rolesTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "roles (" +
-                    "nation_id VARCHAR(36) NOT NULL," +
-                    "player_uuid VARCHAR(36) NOT NULL," +
-                    "role_id VARCHAR(32) NOT NULL," +
-                    "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                    "PRIMARY KEY (nation_id, player_uuid)," +
-                    "FOREIGN KEY (nation_id) REFERENCES " + tablePrefix + "nations(id) ON DELETE CASCADE," +
-                    "INDEX idx_player (player_uuid)" +
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
-
             // Pacts table
             String pactsTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "pacts (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY," +
@@ -128,7 +117,6 @@ public class DatabaseManager implements AutoCloseable {
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute(nationsTable);
                 stmt.execute(citiesTable);
-                stmt.execute(rolesTable);
                 stmt.execute(pactsTable);
             }
         }
@@ -192,28 +180,6 @@ public class DatabaseManager implements AutoCloseable {
                         stmt.setString(2, city.teamName());
                         stmt.addBatch();
                     }
-                    stmt.executeBatch();
-                }
-
-                // Delete existing roles and re-insert
-                String deleteRoles = "DELETE FROM " + tablePrefix + "roles WHERE nation_id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(deleteRoles)) {
-                    stmt.setString(1, nation.getId().toString());
-                    stmt.executeUpdate();
-                }
-
-                String insertRole = "INSERT INTO " + tablePrefix + "roles (nation_id, player_uuid, role_id) VALUES (?, ?, ?)";
-                try (PreparedStatement stmt = conn.prepareStatement(insertRole)) {
-                    nation.getRolesManager().getPlayerRoles().forEach((uuid, role) -> {
-                        try {
-                            stmt.setString(1, nation.getId().toString());
-                            stmt.setString(2, uuid.toString());
-                            stmt.setString(3, role.def().id());
-                            stmt.addBatch();
-                        } catch (SQLException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
                     stmt.executeBatch();
                 }
 
@@ -315,26 +281,6 @@ public class DatabaseManager implements AutoCloseable {
                     }
                 }
             }
-
-            // Load roles for each nation
-            String roleSql = "SELECT * FROM " + tablePrefix + "roles";
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(roleSql)) {
-
-                while (rs.next()) {
-                    UUID nationId = UUID.fromString(rs.getString("nation_id"));
-                    UUID playerUuid = UUID.fromString(rs.getString("player_uuid"));
-                    String roleId = rs.getString("role_id");
-
-                    Nation nation = nationMap.get(nationId);
-                    if (nation != null) {
-                        nation.getRolesManager().loadRoles(plugin.getConfigManager().getNationConfig());
-                        nation.getRolesManager().assignRole(playerUuid, roleId);
-                    }
-                }
-            }
-
-            // Load pacts - will be restored by PactManager
         }
 
         return nations;

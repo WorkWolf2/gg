@@ -31,9 +31,10 @@ public class RangeManager {
     public boolean isCityInRange(Nation nation, CityRef city) {
         int effectiveRange = calculateEffectiveRange(nation);
 
-        Location capitalLoc = nation.getCapital().getLocation();
-        Location cityLoc = city.getLocation();
+        Location capitalLoc = nation.getCapital().getLocation().orElse(null);
+        Location cityLoc = city.getLocation().orElse(null);
 
+        if (capitalLoc == null || cityLoc == null) return false;
         if (capitalLoc.getWorld() == null || cityLoc.getWorld() == null) {
             return false;
         }
@@ -48,14 +49,15 @@ public class RangeManager {
 
     public boolean isCityInRangeOfAnyMember(Nation nation, CityRef targetCity) {
         int effectiveRange = calculateEffectiveRange(nation);
-        Location targetLoc = targetCity.getLocation();
+        Location targetLoc = targetCity.getLocation().orElse(null);
 
+        if (targetLoc == null) return false;
         if (targetLoc.getWorld() == null) {
             return false;
         }
         return nation.getMemberCities().stream()
                 .map(CityRef::getLocation)
-                .filter(loc -> loc.getWorld() != null && loc.getWorld().equals(targetLoc.getWorld()))
-                .anyMatch(loc -> loc.distance(targetLoc) <= effectiveRange);
+                .filter(loc -> loc.get().getWorld() != null && loc.get().getWorld().equals(targetLoc.getWorld()))
+                .anyMatch(loc -> loc.get().distance(targetLoc) <= effectiveRange);
     }
 }

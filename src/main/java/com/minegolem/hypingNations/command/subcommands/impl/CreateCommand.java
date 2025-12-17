@@ -73,10 +73,14 @@ public class CreateCommand implements SubCommand {
         team.addBalance(-creationPrice);
 
         Nation nation = plugin.getNationManager().createNation(nationName, player.getUniqueId(), team.getName());
-        nation.getRolesManager().loadRoles(plugin.getConfigManager().getNationConfig());
+
+        // NOTA: Non serve più caricare/assegnare ruoli
+        // Il player è automaticamente Chief perché è salvato come chief nella nazione
+        // Il sistema verificherà: if (nation.getChief().equals(player.getUniqueId()))
 
         player.sendMessage("§aSuccessfully created the nation §e" + nationName + "§a!");
         player.sendMessage("§aYour city §e" + team.getName() + " §ais now the capital.");
+        player.sendMessage("§7You are now the §6Chief §7of the nation.");
     }
 
     @Override

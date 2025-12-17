@@ -7,6 +7,8 @@ import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 public class LeaveCommand implements SubCommand {
     private final HypingNations plugin;
 

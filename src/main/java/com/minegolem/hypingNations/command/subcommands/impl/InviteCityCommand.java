@@ -6,6 +6,7 @@ import com.minegolem.hypingNations.data.CityRef;
 import com.minegolem.hypingNations.data.Nation;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -32,8 +33,10 @@ public class InviteCityCommand implements SubCommand {
             return;
         }
 
-        if (!nation.getRolesManager().hasPermission(player.getUniqueId(), "can_invite_city_to_nation")) {
+        // AGGIORNATO: Usa il nuovo sistema di permessi
+        if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), nation, "can_invite_city_to_nation")) {
             player.sendMessage("§cYou don't have permission to invite cities!");
+            player.sendMessage("§7Only the Chief or authorized members can invite cities.");
             return;
         }
 
@@ -54,16 +57,24 @@ public class InviteCityCommand implements SubCommand {
         }
 
         CityRef targetCity = new CityRef(cityName);
+
+        Location cityLoc = targetCity.getLocation().orElse(null);
+        if (cityLoc == null || cityLoc.getWorld() == null) {
+            player.sendMessage("§cThat city does not have a claimed location!.");
+            player.sendMessage("§7The mayor must set a city home before it can join a nation.");
+            return;
+        }
+
         if (!plugin.getRangeManager().isCityInRangeOfAnyMember(nation, targetCity)) {
-            int range = plugin.getRangeManager().calculateEffectiveRange(nation);
-            player.sendMessage("§cThat city is too far! Maximum range: " + range + " blocks");
+            int range = plugin.getPermissionManager().getInviteRange(player.getUniqueId(), nation);
+            player.sendMessage("§cThat city is too far! Your maximum range: " + range + " blocks");
             return;
         }
 
         plugin.getInvitationManager().createInvitation(nation.getName(), cityName);
 
         player.sendMessage("§aInvitation sent to §e" + cityName + "§a!");
-        player.sendMessage("§7They must use §f/hnations acceptcity " + nation.getName() + " §7to join.");
+        player.sendMessage("§7They must use §f/hnations acceptcity §7to join.");
         player.sendMessage("§7This invitation will expire in 30 minutes.");
 
         Player targetMayor = plugin.getServer().getPlayer(targetTeam.getOwner());
@@ -74,7 +85,7 @@ public class InviteCityCommand implements SubCommand {
             targetMayor.sendMessage("§7Your city §e" + cityName + " §7has been invited to join");
             targetMayor.sendMessage("§7the nation §e" + nation.getName() + "§7!");
             targetMayor.sendMessage("");
-            targetMayor.sendMessage("§7Use §f/hnations acceptcity " + nation.getName() + " §7to accept");
+            targetMayor.sendMessage("§7Use §f/hnations acceptcity §7to accept");
             targetMayor.sendMessage("§7This invitation expires in §e30 minutes§7.");
             targetMayor.sendMessage("§8§m                                                ");
         }

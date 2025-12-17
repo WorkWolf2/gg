@@ -4,7 +4,6 @@ import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
 import com.minegolem.hypingNations.manager.PactManager;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -46,8 +45,10 @@ public class PactCommand implements SubCommand {
             return;
         }
 
-        if (!playerNation.getRolesManager().hasPermission(player.getUniqueId(), "can_propose_pact")) {
+        // AGGIORNATO: Usa il nuovo sistema di permessi
+        if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_propose_pact")) {
             player.sendMessage("§cYou don't have permission to propose pacts!");
+            player.sendMessage("§7Only the Chief or authorized members can propose pacts.");
             return;
         }
 
@@ -107,8 +108,10 @@ public class PactCommand implements SubCommand {
             return;
         }
 
-        if (!playerNation.getRolesManager().hasPermission(player.getUniqueId(), "can_create_pact")) {
+        // AGGIORNATO: Usa il nuovo sistema di permessi
+        if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_create_pact")) {
             player.sendMessage("§cYou don't have permission to accept pacts!");
+            player.sendMessage("§7Only the Chief or authorized members can accept pacts.");
             return;
         }
 
@@ -146,6 +149,12 @@ public class PactCommand implements SubCommand {
             return;
         }
 
+        // I patti possono essere negati da chiunque abbia permessi di gestione
+        if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_create_pact")) {
+            player.sendMessage("§cYou don't have permission to deny pacts!");
+            return;
+        }
+
         String proposerName = args[1];
         Nation proposerNation = plugin.getNationManager().getNation(proposerName);
         if (proposerNation == null) {
@@ -178,8 +187,10 @@ public class PactCommand implements SubCommand {
             return;
         }
 
-        if (!playerNation.getRolesManager().hasPermission(player.getUniqueId(), "can_break_pact")) {
+        // AGGIORNATO: Usa il nuovo sistema di permessi
+        if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_break_pact")) {
             player.sendMessage("§cYou don't have permission to break pacts!");
+            player.sendMessage("§7Only the Chief or authorized members can break pacts.");
             return;
         }
 
