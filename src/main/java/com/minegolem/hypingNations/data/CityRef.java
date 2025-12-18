@@ -14,10 +14,6 @@ import java.util.*;
 
 public record CityRef(String teamName) {
 
-    /* -------------------------------------------------------
-       TEAM ACCESS
-       ------------------------------------------------------- */
-
     public Optional<Team> getTeam() {
         return Optional.ofNullable(TeamAPI.getTeamByName(teamName));
     }
@@ -25,10 +21,6 @@ public record CityRef(String teamName) {
     public boolean exists() {
         return getTeam().isPresent();
     }
-
-    /* -------------------------------------------------------
-       ROLES
-       ------------------------------------------------------- */
 
     public Optional<UUID> getMayorUUID() {
         return getTeam().map(Team::getOwner);
@@ -70,10 +62,6 @@ public record CityRef(String teamName) {
                 .orElse(Collections.emptySet());
     }
 
-    /* -------------------------------------------------------
-       LOCATION
-       ------------------------------------------------------- */
-
     public Optional<Location> getLocation() {
         return getTeam()
                 .flatMap(this::getHomeLocation)
@@ -111,10 +99,6 @@ public record CityRef(String teamName) {
         return Optional.of(new Location(world, x + 0.5, 64, z + 0.5));
     }
 
-    /* -------------------------------------------------------
-       CLAIMS
-       ------------------------------------------------------- */
-
     public int getChunksCount() {
         HypingTeams plugin = HypingTeams.getInstance();
         if (plugin == null) return 0;
@@ -126,10 +110,6 @@ public record CityRef(String teamName) {
                 .map(claim -> claim.getChunks().size())
                 .orElse(0);
     }
-
-    /* -------------------------------------------------------
-       DEBUG / SAFETY
-       ------------------------------------------------------- */
 
     @Override
     public String toString() {

@@ -4,7 +4,6 @@ import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import org.bukkit.entity.Player;
 
-import java.util.List;
 import java.util.Map;
 
 public class HelpCommand implements SubCommand {

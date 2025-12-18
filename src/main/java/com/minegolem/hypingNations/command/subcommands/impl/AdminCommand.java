@@ -2,6 +2,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
+import com.minegolem.hypingNations.manager.MessageManager;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -18,12 +19,12 @@ public class AdminCommand implements SubCommand {
     @Override
     public void execute(Player player, String[] args) {
         if (!player.hasPermission("hypingnations.admin")) {
-            player.sendMessage("§cYou don't have permission to use this command!");
+            plugin.getMessageManager().sendMessage(player, "general.no-permission");
             return;
         }
 
         if (args.length < 1) {
-            player.sendMessage("§cUsage: /hnations admin <reload>");
+            plugin.getMessageManager().sendMessage(player, "admin.usage");
             return;
         }
 
@@ -31,9 +32,13 @@ public class AdminCommand implements SubCommand {
 
         if (action.equals("reload")) {
             plugin.reload();
-            player.sendMessage("§aConfiguration reloaded successfully!");
+            plugin.getMessageManager().sendMessage(player, "general.reload-success");
         } else {
-            player.sendMessage("§cUnknown action: " + action);
+            plugin.getMessageManager().sendMessage(player, "admin.unknown-action",
+                    MessageManager.placeholder()
+                            .add("action", action)
+                            .build()
+            );
         }
     }
 

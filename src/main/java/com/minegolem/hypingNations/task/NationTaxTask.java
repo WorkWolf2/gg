@@ -68,8 +68,8 @@ public class NationTaxTask implements Runnable {
     public void startDaily() {
         foliaLib.getScheduler().runTimerAsync(
                 this,
-                20L * 60 * 60 * 24, // delay 24h
-                20L * 60 * 60 * 24  // repeat 24h
+                20L * 60 * 60 * 24,
+                20L * 60 * 60 * 24
         );
     }
 }

@@ -38,17 +38,11 @@ public class InvitationManager {
         this(30);
     }
 
-    /**
-     * Create an invitation for a city to join a nation
-     */
     public void createInvitation(String nationName, String cityName) {
         Invitation invitation = new Invitation(nationName, cityName, invitationExpirationMinutes);
         pendingInvitations.put(cityName.toLowerCase(), invitation);
     }
 
-    /**
-     * Get pending invitation for a city
-     */
     public Optional<Invitation> getInvitation(String cityName) {
         Invitation invitation = pendingInvitations.get(cityName.toLowerCase());
 
@@ -65,9 +59,6 @@ public class InvitationManager {
         return Optional.of(invitation);
     }
 
-    /**
-     * Accept an invitation (removes it from pending)
-     */
     public boolean acceptInvitation(String cityName) {
         Optional<Invitation> invitation = getInvitation(cityName);
         if (invitation.isPresent()) {
@@ -77,23 +68,14 @@ public class InvitationManager {
         return false;
     }
 
-    /**
-     * Cancel/deny an invitation
-     */
     public boolean cancelInvitation(String cityName) {
         return pendingInvitations.remove(cityName.toLowerCase()) != null;
     }
 
-    /**
-     * Check if a city has a pending invitation
-     */
     public boolean hasInvitation(String cityName) {
         return getInvitation(cityName).isPresent();
     }
 
-    /**
-     * Remove expired invitations (cleanup)
-     */
     public void cleanupExpiredInvitations() {
         pendingInvitations.entrySet().removeIf(entry -> entry.getValue().isExpired());
     }

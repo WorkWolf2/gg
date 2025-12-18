@@ -103,7 +103,6 @@ public class PactManager {
         activePacts.entrySet().removeIf(entry -> {
             Pact pact = entry.getValue();
             if (pact.isExpired()) {
-                // Remove from both nations
                 pact.getProposer().removePact(pact.getTarget().getId());
                 pact.getTarget().removePact(pact.getProposer().getId());
                 return true;

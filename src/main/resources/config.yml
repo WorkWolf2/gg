@@ -28,7 +28,7 @@ database:
 nation-system:
   economy:
     creation:
-      minimum-member:
+      minimum-member: 5
       minimum-claim: 10
       price: 10000
 
@@ -145,6 +145,10 @@ messages:
     unknown-command: "{prefix}§cUnknown command. Use §f/hnations help §cfor help."
     reload-success: "{prefix}§aConfiguration reloaded successfully!"
 
+  admin:
+    usage: "{prefix}§cUsage: /hnations admin <reload>"
+    unknown-action: "{prefix}§cUnknown action: §e{action}"
+
   creation:
     success: |
       §8§m                                                
@@ -173,6 +177,8 @@ messages:
       §7Member Cities: §f{member_cities}
       §7Total Members: §f{total_members}
       
+      §7Your Role: §f{your_role}
+      
       §e§lEconomy:
       §7Treasury: §f${treasury}
       §7Next Tax: §f${next_tax}
@@ -182,9 +188,8 @@ messages:
       §b§lDiplomacy:
       §7Active Pacts: §f{active_pacts}
       {allies_list}
-      
       §a§lInfluence:
-      §7Recruitment Range: §f{effective_range} blocks
+      §7Your Recruitment Range: §f{effective_range} blocks
       §8§m
     allies-header: "§7Allies:"
     ally-entry: "  §f- {ally_name}"
@@ -203,13 +208,21 @@ messages:
       §7Use §f/hnations acceptcity §7to accept
       §7This invitation expires in §e30 minutes§7.
       §8§m
+    not-in-nation: "{prefix}§cYou are not part of any nation!"
+    no-permission: |
+      {prefix}§cYou don't have permission to invite cities!
+      §7Only the Chief or authorized members can invite cities.
+    must-be-in-team: "{prefix}§cYou must be in a city!"
     must-be-owner: "{prefix}§cOnly the mayor can manage nation invitations!"
     city-not-found: "{prefix}§cCity not found: §e{city_name}"
     already-in-nation: "{prefix}§cThat city is already part of a nation!"
     already-has-invitation: "{prefix}§cThat city already has a pending invitation!"
-    out-of-range: "{prefix}§cThat city is too far! Maximum range: §e{max_range} §cblocks"
+    no-home: |
+      {prefix}§cThat city does not have a claimed location!
+      §7The mayor must set a city home before it can join a nation.
+    out-of-range: "{prefix}§cThat city is too far! Your maximum range: §e{max_range} §cblocks"
     no-invitation: "{prefix}§cYou don't have any pending nation invitations!"
-    invitation-expired: "{prefix}§7The invitation may have expired (30 minutes)."
+    invitation-expired: "{prefix}§7Invitations expire after 30 minutes."
     nation-not-found: "{prefix}§cNation not found: §e{nation_name}"
     nation-dissolved: "{prefix}§7The nation may have been dissolved."
     accept-success: "{prefix}§aYour city §e{city_name} §ahas joined §e{nation_name}§a!"
@@ -227,6 +240,42 @@ messages:
       §7Use §f/hnations delete §7to disband the nation.
     failed: "{prefix}§cFailed to leave nation. Please contact an administrator."
 
+  delete:
+    not-in-nation: "{prefix}§cYou are not part of any nation!"
+    no-permission: |
+      {prefix}§cYou don't have permission to delete this nation!
+      §7Only the Chief can delete the nation.
+    confirm-required: |
+      §8§m                                                
+      §c§l⚠ WARNING - NATION DELETION ⚠
+      
+      §7You are about to §cPERMANENTLY DELETE §7the nation:
+      §e{nation_name}
+      
+      §7This action §cCANNOT BE UNDONE§7!
+      §7All member cities will be removed from the nation.
+      
+      §7To confirm deletion, type:
+      §f/hnations delete confirm
+      §8§m
+    success: |
+      §8§m                                                
+      §c§lNation Deleted
+      
+      §7The nation §e{nation_name} §7has been permanently deleted.
+      §7Former cities: §f{member_cities}
+      §7Former members: §f{total_members}
+      §8§m
+    notify-members: |
+      §8§m                                                
+      §c§lNation Dissolved
+      
+      §7The nation §e{nation_name} §7has been deleted
+      §7by the Chief §f{chief_name}§7.
+      
+      §7Your city is no longer part of any nation.
+      §8§m                                                
+
   pact:
     usage: "{prefix}§cUsage: /hnations pact <propose|accept|deny|break> ..."
     unknown-action: "{prefix}§cUnknown action. Use: propose, accept, deny, break"
@@ -234,7 +283,9 @@ messages:
     propose:
       usage: "{prefix}§cUsage: /hnations pact propose <nation> <days>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
-      no-permission: "{prefix}§cYou don't have permission to propose pacts!"
+      no-permission: |
+        {prefix}§cYou don't have permission to propose pacts!
+        §7Only the Chief or authorized members can propose pacts.
       nation-not-found: "{prefix}§cNation not found: §e{nation_name}"
       cannot-pact-self: "{prefix}§cYou cannot create a pact with your own nation!"
       invalid-days: "{prefix}§cInvalid number of days!"
@@ -254,7 +305,9 @@ messages:
     accept:
       usage: "{prefix}§cUsage: /hnations pact accept <nation>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
-      no-permission: "{prefix}§cYou don't have permission to accept pacts!"
+      no-permission: |
+        {prefix}§cYou don't have permission to accept pacts!
+        §7Only the Chief or authorized members can accept pacts.
       nation-not-found: "{prefix}§cNation not found: §e{nation_name}"
       success: |
         {prefix}§aPact accepted with §e{nation_name}§a!
@@ -267,6 +320,7 @@ messages:
     deny:
       usage: "{prefix}§cUsage: /hnations pact deny <nation>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
+      no-permission: "{prefix}§cYou don't have permission to deny pacts!"
       nation-not-found: "{prefix}§cNation not found: §e{nation_name}"
       success: "{prefix}§cPact denied from §e{nation_name}§c!"
       notify-proposer: "{prefix}§c{target_nation} §cdenied your pact proposal!"
@@ -275,7 +329,9 @@ messages:
     break:
       usage: "{prefix}§cUsage: /hnations pact break <nation>"
       not-in-nation: "{prefix}§cYou are not part of any nation!"
-      no-permission: "{prefix}§cYou don't have permission to break pacts!"
+      no-permission: |
+        {prefix}§cYou don't have permission to break pacts!
+        §7Only the Chief or authorized members can break pacts.
       nation-not-found: "{prefix}§cNation not found: §e{nation_name}"
       no-active-pact: "{prefix}§cYou don't have an active pact with §e{nation_name}§c!"
       success: |
@@ -332,4 +388,4 @@ messages:
       §8§m                                                
       §6§lHypingNations Commands
 
-    footer: "§8§m"
+    footer: "§8§m                                                "

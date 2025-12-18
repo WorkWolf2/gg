@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.manager.MessageManager;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
 import org.bukkit.entity.Player;
@@ -20,38 +21,45 @@ public class LeaveCommand implements SubCommand {
     public void execute(Player player, String[] args) {
         Team team = TeamAPI.getTeamByPlayer(player);
         if (team == null) {
-            player.sendMessage("§cYou must be in a city!");
+            plugin.getMessageManager().sendMessage(player, "leave.must-be-in-team");
             return;
         }
 
         if (!team.getOwner().equals(player.getUniqueId())) {
-            player.sendMessage("§cOnly the mayor can make the city leave a nation!");
+            plugin.getMessageManager().sendMessage(player, "leave.must-be-owner");
             return;
         }
 
         Nation nation = plugin.getNationManager().getNationByCity(team.getName());
         if (nation == null) {
-            player.sendMessage("§cYour city is not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "leave.not-in-nation");
             return;
         }
 
         if (nation.getCapital().teamName().equals(team.getName())) {
-            player.sendMessage("§cThe capital cannot leave the nation!");
-            player.sendMessage("§7Use §f/hnations delete §7to disband the nation or transfer capital first.");
+            plugin.getMessageManager().sendMessage(player, "leave.capital-cannot-leave");
             return;
         }
 
         boolean success = plugin.getNationManager().removeCityFromNation(nation.getName(), team.getName());
 
         if (success) {
-            player.sendMessage("§aYour city has left the nation §e" + nation.getName() + "§a!");
+            plugin.getMessageManager().sendMessage(player, "leave.success",
+                    MessageManager.placeholder()
+                            .add("nation_name", nation.getName())
+                            .build()
+            );
 
             Player chief = plugin.getServer().getPlayer(nation.getChief());
             if (chief != null && chief.isOnline()) {
-                chief.sendMessage("§cThe city §e" + team.getName() + " §chas left your nation!");
+                plugin.getMessageManager().sendMessage(chief, "leave.notify-chief",
+                        MessageManager.placeholder()
+                                .add("city_name", team.getName())
+                                .build()
+                );
             }
         } else {
-            player.sendMessage("§cFailed to leave nation. Please contact an administrator.");
+            plugin.getMessageManager().sendMessage(player, "leave.failed");
         }
     }
 

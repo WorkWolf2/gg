@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.manager.MessageManager;
 import com.minegolem.hypingNations.manager.PactManager;
 import org.bukkit.entity.Player;
 
@@ -22,57 +23,49 @@ public class InfoCommand implements SubCommand {
         Nation nation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
 
         if (nation == null) {
-            player.sendMessage("§cYou are not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "info.not-in-nation");
             return;
         }
 
-        player.sendMessage("§8§m                                                ");
-        player.sendMessage("§6§lNation Info: §e" + nation.getName());
-        player.sendMessage("");
-        player.sendMessage("§7Chief: §f" + plugin.getServer().getOfflinePlayer(nation.getChief()).getName());
-        player.sendMessage("§7Capital: §f" + nation.getCapital().teamName());
-        player.sendMessage("§7Member Cities: §f" + nation.getMemberCities().size());
-        player.sendMessage("§7Total Members: §f" + nation.getAllMembers().size());
-        player.sendMessage("");
-
-        // AGGIORNATO: Mostra il ruolo usando il nuovo sistema
-        String yourRole = plugin.getPermissionManager().getRoleDisplayName(player.getUniqueId(), nation);
-        player.sendMessage("§7Your Role: §f" + yourRole);
-        player.sendMessage("");
-
-        // Tax info
         double nextTax = plugin.getTaxManager().calculateTax(nation);
         int unpaidDays = nation.getUnpaidDays();
         int maxUnpaidDays = plugin.getTaxManager().getMaxUnpaidDaysBeforeDissolution();
+        String yourRole = plugin.getPermissionManager().getRoleDisplayName(player.getUniqueId(), nation);
+        int effectiveRange = plugin.getPermissionManager().getInviteRange(player.getUniqueId(), nation);
 
-        player.sendMessage("§e§lEconomy:");
-        player.sendMessage("§7Treasury: §f$" + df.format(nation.getTreasury()));
-        player.sendMessage("§7Next Tax: §f$" + df.format(nextTax));
-        player.sendMessage("§7Taxed Chunks: §f" + nation.getTotalChunks());
-        player.sendMessage("§7Unpaid Days: §f" + unpaidDays + "/" + maxUnpaidDays);
-        player.sendMessage("");
-
-        // Pacts info
-        player.sendMessage("§b§lDiplomacy:");
-        player.sendMessage("§7Active Pacts: §f" + nation.getActivePacts().size());
-
+        StringBuilder alliesList = new StringBuilder();
         if (!nation.getActivePacts().isEmpty()) {
-            player.sendMessage("§7Allies:");
+            alliesList.append(plugin.getMessageManager().getMessage("info.allies-header")).append("\n");
             for (PactManager.Pact pact : nation.getActivePacts().values()) {
                 if (pact.isActive() && !pact.isExpired()) {
-                    Nation ally = pact.getTarget();
-                    player.sendMessage("  §f- " + ally.getName());
+                    String entry = plugin.getMessageManager().getMessage("info.ally-entry",
+                            MessageManager.placeholder()
+                                    .add("ally_name", pact.getTarget().getName())
+                                    .build()
+                    );
+                    alliesList.append(entry).append("\n");
                 }
             }
         }
 
-        // Range info
-        int effectiveRange = plugin.getPermissionManager().getInviteRange(player.getUniqueId(), nation);
-        player.sendMessage("");
-        player.sendMessage("§a§lInfluence:");
-        player.sendMessage("§7Your Recruitment Range: §f" + effectiveRange + " blocks");
-
-        player.sendMessage("§8§m                                                ");
+        plugin.getMessageManager().sendMessage(player, "info.display",
+                MessageManager.placeholder()
+                        .add("nation_name", nation.getName())
+                        .add("chief_name", plugin.getServer().getOfflinePlayer(nation.getChief()).getName())
+                        .add("capital_name", nation.getCapital().teamName())
+                        .add("member_cities", nation.getMemberCities().size())
+                        .add("total_members", nation.getAllMembers().size())
+                        .add("your_role", yourRole)
+                        .add("treasury", df.format(nation.getTreasury()))
+                        .add("next_tax", df.format(nextTax))
+                        .add("taxed_chunks", nation.getTotalChunks())
+                        .add("unpaid_days", unpaidDays)
+                        .add("max_unpaid_days", maxUnpaidDays)
+                        .add("active_pacts", nation.getActivePacts().size())
+                        .add("allies_list", alliesList.toString())
+                        .add("effective_range", effectiveRange)
+                        .build()
+        );
     }
 
     @Override

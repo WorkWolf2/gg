@@ -22,7 +22,6 @@ public class DatabasePersistenceService implements PersistenceService {
         try {
             List<Nation> nations = databaseManager.loadAllNations();
 
-            // Load pacts after nations are loaded
             Map<UUID, Nation> nationMap = new HashMap<>();
             for (Nation nation : nations) {
                 nationMap.put(nation.getId(), nation);

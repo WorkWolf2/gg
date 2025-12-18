@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.manager.MessageManager;
 import dev.canable.hypingteams.HypingTeams;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.manager.ClaimManager;
@@ -30,22 +31,22 @@ public class CreateCommand implements SubCommand {
 
         Team team = TeamAPI.getTeamByPlayer(player);
         if (team == null) {
-            player.sendMessage("§cYou must be in a city to create a nation!");
+            plugin.getMessageManager().sendMessage(player, "creation.must-be-in-team");
             return;
         }
 
         if (!team.getOwner().equals(player.getUniqueId())) {
-            player.sendMessage("§cOnly the mayor can create a nation!");
+            plugin.getMessageManager().sendMessage(player, "creation.must-be-owner");
             return;
         }
 
         if (plugin.getNationManager().getNationByCity(team.getName()) != null) {
-            player.sendMessage("§cYour city is already part of a nation!");
+            plugin.getMessageManager().sendMessage(player, "creation.already-in-nation");
             return;
         }
 
         if (plugin.getNationManager().isNameTaken(nationName)) {
-            player.sendMessage("§cA nation with that name already exists!");
+            plugin.getMessageManager().sendMessage(player, "creation.name-taken");
             return;
         }
 
@@ -53,20 +54,32 @@ public class CreateCommand implements SubCommand {
         int minClaims = plugin.getConfigManager().getNationConfig().getMinClaims();
 
         if (team.getMembers().size() < minMembers) {
-            player.sendMessage("§cYour city needs at least §e" + minMembers + " §cmembers to create a nation!");
+            plugin.getMessageManager().sendMessage(player, "creation.not-enough-members",
+                    MessageManager.placeholder()
+                            .add("min_members", minMembers)
+                            .build()
+            );
             return;
         }
 
         int claimedChunks = getTeamClaimedChunks(team.getName());
         if (claimedChunks < minClaims) {
-            player.sendMessage("§cYour city needs at least §e" + minClaims + " §cclaimed chunks to create a nation!");
-            player.sendMessage("§7You currently have §e" + claimedChunks + " §7claimed chunks.");
+            plugin.getMessageManager().sendMessage(player, "creation.not-enough-claims",
+                    MessageManager.placeholder()
+                            .add("min_claims", minClaims)
+                            .add("current_claims", claimedChunks)
+                            .build()
+            );
             return;
         }
 
         int creationPrice = plugin.getConfigManager().getNationConfig().getCreationPrice();
         if (team.getBalance() < creationPrice) {
-            player.sendMessage("§cYour city needs §e$" + creationPrice + " §cto create a nation!");
+            plugin.getMessageManager().sendMessage(player, "creation.not-enough-money",
+                    MessageManager.placeholder()
+                            .add("creation_price", creationPrice)
+                            .build()
+            );
             return;
         }
 
@@ -74,13 +87,12 @@ public class CreateCommand implements SubCommand {
 
         Nation nation = plugin.getNationManager().createNation(nationName, player.getUniqueId(), team.getName());
 
-        // NOTA: Non serve più caricare/assegnare ruoli
-        // Il player è automaticamente Chief perché è salvato come chief nella nazione
-        // Il sistema verificherà: if (nation.getChief().equals(player.getUniqueId()))
-
-        player.sendMessage("§aSuccessfully created the nation §e" + nationName + "§a!");
-        player.sendMessage("§aYour city §e" + team.getName() + " §ais now the capital.");
-        player.sendMessage("§7You are now the §6Chief §7of the nation.");
+        plugin.getMessageManager().sendMessage(player, "creation.success",
+                MessageManager.placeholder()
+                        .add("nation_name", nationName)
+                        .add("capital_name", team.getName())
+                        .build()
+        );
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.CityRef;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.manager.MessageManager;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
 import org.bukkit.Location;
@@ -29,30 +30,32 @@ public class InviteCityCommand implements SubCommand {
 
         Nation nation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
         if (nation == null) {
-            player.sendMessage("§cYou are not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "invitation.not-in-nation");
             return;
         }
 
-        // AGGIORNATO: Usa il nuovo sistema di permessi
         if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), nation, "can_invite_city_to_nation")) {
-            player.sendMessage("§cYou don't have permission to invite cities!");
-            player.sendMessage("§7Only the Chief or authorized members can invite cities.");
+            plugin.getMessageManager().sendMessage(player, "invitation.no-permission");
             return;
         }
 
         Team targetTeam = TeamAPI.getTeamByName(cityName);
         if (targetTeam == null) {
-            player.sendMessage("§cCity not found: " + cityName);
+            plugin.getMessageManager().sendMessage(player, "invitation.city-not-found",
+                    MessageManager.placeholder()
+                            .add("city_name", cityName)
+                            .build()
+            );
             return;
         }
 
         if (plugin.getNationManager().isCityInNation(cityName)) {
-            player.sendMessage("§cThat city is already part of a nation!");
+            plugin.getMessageManager().sendMessage(player, "invitation.already-in-nation");
             return;
         }
 
         if (plugin.getInvitationManager().hasInvitation(cityName)) {
-            player.sendMessage("§cThat city already has a pending invitation!");
+            plugin.getMessageManager().sendMessage(player, "invitation.already-has-invitation");
             return;
         }
 
@@ -60,34 +63,36 @@ public class InviteCityCommand implements SubCommand {
 
         Location cityLoc = targetCity.getLocation().orElse(null);
         if (cityLoc == null || cityLoc.getWorld() == null) {
-            player.sendMessage("§cThat city does not have a claimed location!.");
-            player.sendMessage("§7The mayor must set a city home before it can join a nation.");
+            plugin.getMessageManager().sendMessage(player, "invitation.no-home");
             return;
         }
 
         if (!plugin.getRangeManager().isCityInRangeOfAnyMember(nation, targetCity)) {
             int range = plugin.getPermissionManager().getInviteRange(player.getUniqueId(), nation);
-            player.sendMessage("§cThat city is too far! Your maximum range: " + range + " blocks");
+            plugin.getMessageManager().sendMessage(player, "invitation.out-of-range",
+                    MessageManager.placeholder()
+                            .add("max_range", range)
+                            .build()
+            );
             return;
         }
 
         plugin.getInvitationManager().createInvitation(nation.getName(), cityName);
 
-        player.sendMessage("§aInvitation sent to §e" + cityName + "§a!");
-        player.sendMessage("§7They must use §f/hnations acceptcity §7to join.");
-        player.sendMessage("§7This invitation will expire in 30 minutes.");
+        plugin.getMessageManager().sendMessage(player, "invitation.sent",
+                MessageManager.placeholder()
+                        .add("city_name", cityName)
+                        .build()
+        );
 
         Player targetMayor = plugin.getServer().getPlayer(targetTeam.getOwner());
         if (targetMayor != null && targetMayor.isOnline()) {
-            targetMayor.sendMessage("§8§m                                                ");
-            targetMayor.sendMessage("§6§lNation Invitation");
-            targetMayor.sendMessage("");
-            targetMayor.sendMessage("§7Your city §e" + cityName + " §7has been invited to join");
-            targetMayor.sendMessage("§7the nation §e" + nation.getName() + "§7!");
-            targetMayor.sendMessage("");
-            targetMayor.sendMessage("§7Use §f/hnations acceptcity §7to accept");
-            targetMayor.sendMessage("§7This invitation expires in §e30 minutes§7.");
-            targetMayor.sendMessage("§8§m                                                ");
+            plugin.getMessageManager().sendMessage(targetMayor, "invitation.received",
+                    MessageManager.placeholder()
+                            .add("city_name", cityName)
+                            .add("nation_name", nation.getName())
+                            .build()
+            );
         }
     }
 

@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.manager.MessageManager;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 
@@ -21,7 +22,7 @@ public class TaxCommand implements SubCommand {
         Nation nation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
 
         if (nation == null) {
-            player.sendMessage("§cYou are not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "tax.not-in-nation");
             return;
         }
 
@@ -31,26 +32,29 @@ public class TaxCommand implements SubCommand {
         int unpaidDays = nation.getUnpaidDays();
         int maxUnpaidDays = plugin.getTaxManager().getMaxUnpaidDaysBeforeDissolution();
 
-        player.sendMessage("§8§m                                                ");
-        player.sendMessage("§e§lTax Information: §f" + nation.getName());
-        player.sendMessage("");
-        player.sendMessage("§7Next Tax Payment: §f$" + df.format(nextTax));
-        player.sendMessage("§7Per Chunk Price: §f$" + df.format(perChunk));
-        player.sendMessage("§7Taxed Chunks: §f" + totalChunks);
-        player.sendMessage("");
-        player.sendMessage("§7Unpaid Days: §f" + unpaidDays + "/" + maxUnpaidDays);
-
+        String statusMessage;
         if (unpaidDays > 0) {
             int remaining = maxUnpaidDays - unpaidDays;
-            player.sendMessage("§c⚠ Warning: Nation will dissolve in " + remaining + " days!");
+            statusMessage = plugin.getMessageManager().getMessage("tax.warning",
+                    MessageManager.placeholder()
+                            .add("remaining_days", remaining)
+                            .build()
+            );
         } else {
-            player.sendMessage("§a✓ Tax payments are up to date");
+            statusMessage = plugin.getMessageManager().getMessage("tax.up-to-date");
         }
 
-        player.sendMessage("");
-        player.sendMessage("§7Next Collection: §fDaily at midnight");
-        player.sendMessage("§7Source: §fCapital city balance");
-        player.sendMessage("§8§m                                                ");
+        plugin.getMessageManager().sendMessage(player, "tax.display",
+                MessageManager.placeholder()
+                        .add("nation_name", nation.getName())
+                        .add("next_tax", df.format(nextTax))
+                        .add("per_chunk", df.format(perChunk))
+                        .add("total_chunks", totalChunks)
+                        .add("unpaid_days", unpaidDays)
+                        .add("max_unpaid_days", maxUnpaidDays)
+                        .add("status_message", statusMessage)
+                        .build()
+        );
     }
 
     @Override

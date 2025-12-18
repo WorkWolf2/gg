@@ -7,7 +7,6 @@ import com.minegolem.hypingNations.listener.TeamClaimListener;
 import com.minegolem.hypingNations.manager.*;
 import com.minegolem.hypingNations.role.NationPermissionManager;
 import com.minegolem.hypingNations.service.DatabasePersistenceService;
-import com.minegolem.hypingNations.service.PersistenceService;
 import com.minegolem.hypingNations.task.BackupTask;
 import com.minegolem.hypingNations.task.InvitationCleanupTask;
 import com.minegolem.hypingNations.task.NationTaxTask;
@@ -35,7 +34,6 @@ public final class HypingNations extends JavaPlugin {
     private RangeManager rangeManager;
     private InvitationManager invitationManager;
 
-    // NUOVO: Manager per i permessi integrato con HypingTeams
     private NationPermissionManager permissionManager;
 
     @Override
@@ -46,7 +44,6 @@ public final class HypingNations extends JavaPlugin {
         configManager = new ConfigManager(this);
         messageManager = new MessageManager(this);
 
-        // Initialize database
         if (!initializeDatabase()) {
             getLogger().severe("Failed to initialize database! Disabling plugin...");
             getServer().getPluginManager().disablePlugin(this);
@@ -80,7 +77,6 @@ public final class HypingNations extends JavaPlugin {
                 databaseManager = new DatabaseManager(this);
                 databaseManager.initialize();
 
-                // Initialize persistence service with database
                 persistenceService = new DatabasePersistenceService(databaseManager, this);
 
                 return true;
@@ -108,7 +104,6 @@ public final class HypingNations extends JavaPlugin {
         rangeManager = new RangeManager(configManager.getNationConfig());
         invitationManager = new InvitationManager(30);
 
-        // NUOVO: Inizializza il manager dei permessi
         permissionManager = new NationPermissionManager(this);
     }
 
@@ -133,11 +128,9 @@ public final class HypingNations extends JavaPlugin {
     }
 
     private void startTasks() {
-        // Tax collection task
         NationTaxTask taxTask = new NationTaxTask(foliaLib, nationManager, taxManager, getLogger());
         taxTask.startDaily();
 
-        // Invitation cleanup task (every 5 minutes)
         InvitationCleanupTask cleanupTask = new InvitationCleanupTask(invitationManager);
         foliaLib.getScheduler().runTimerAsync(
                 cleanupTask,
@@ -145,7 +138,6 @@ public final class HypingNations extends JavaPlugin {
                 20L * 60 * 5
         );
 
-        // Pact cleanup task (every hour)
         PactCleanupTask pactCleanupTask = new PactCleanupTask(pactManager);
         foliaLib.getScheduler().runTimerAsync(
                 pactCleanupTask,
@@ -153,14 +145,12 @@ public final class HypingNations extends JavaPlugin {
                 20L * 60 * 60
         );
 
-        // Auto-save task (every 10 minutes)
         foliaLib.getScheduler().runTimerAsync(
                 this::saveData,
                 20L * 60 * 10,
                 20L * 60 * 10
         );
 
-        // Backup task
         if (getConfig().getBoolean("database.backup.enabled", true)) {
             int intervalHours = getConfig().getInt("database.backup.interval-hours", 6);
             BackupTask backupTask = new BackupTask(this);

@@ -4,11 +4,11 @@ import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
 import com.minegolem.hypingNations.manager.InvitationManager;
+import com.minegolem.hypingNations.manager.MessageManager;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
 import org.bukkit.entity.Player;
 
-import java.util.List;
 import java.util.Optional;
 
 
@@ -23,17 +23,17 @@ public class AcceptCityCommand implements SubCommand {
     public void execute(Player player, String[] args) {
         Team playerTeam = TeamAPI.getTeamByPlayer(player);
         if (playerTeam == null) {
-            player.sendMessage("§cYou must be in a city!");
+            plugin.getMessageManager().sendMessage(player, "invitation.must-be-in-team");
             return;
         }
 
         if (!playerTeam.getOwner().equals(player.getUniqueId())) {
-            player.sendMessage("§cOnly the mayor can accept nation invitations!");
+            plugin.getMessageManager().sendMessage(player, "invitation.must-be-owner");
             return;
         }
 
         if (plugin.getNationManager().isCityInNation(playerTeam.getName())) {
-            player.sendMessage("§cYour city is already part of a nation!");
+            plugin.getMessageManager().sendMessage(player, "invitation.already-in-nation");
             return;
         }
 
@@ -41,8 +41,8 @@ public class AcceptCityCommand implements SubCommand {
                 plugin.getInvitationManager().getInvitation(playerTeam.getName());
 
         if (invitationOpt.isEmpty()) {
-            player.sendMessage("§cYou don't have any pending nation invitations!");
-            player.sendMessage("§7Invitations expire after 30 minutes.");
+            plugin.getMessageManager().sendMessage(player, "invitation.no-invitation");
+            plugin.getMessageManager().sendMessage(player, "invitation.invitation-expired");
             return;
         }
 
@@ -51,8 +51,12 @@ public class AcceptCityCommand implements SubCommand {
 
         Nation nation = plugin.getNationManager().getNation(nationName);
         if (nation == null) {
-            player.sendMessage("§cNation not found: " + nationName);
-            player.sendMessage("§7The nation may have been dissolved.");
+            plugin.getMessageManager().sendMessage(player, "invitation.nation-not-found",
+                    MessageManager.placeholder()
+                            .add("nation_name", nationName)
+                            .build()
+            );
+            plugin.getMessageManager().sendMessage(player, "invitation.nation-dissolved");
             plugin.getInvitationManager().cancelInvitation(playerTeam.getName());
             return;
         }
@@ -61,14 +65,23 @@ public class AcceptCityCommand implements SubCommand {
         boolean success = plugin.getNationManager().addCityToNation(nationName, playerTeam.getName());
 
         if (success) {
-            player.sendMessage("§aYour city §e" + playerTeam.getName() + " §ahas joined the nation §e" + nationName + "§a!");
+            plugin.getMessageManager().sendMessage(player, "invitation.accept-success",
+                    MessageManager.placeholder()
+                            .add("city_name", playerTeam.getName())
+                            .add("nation_name", nationName)
+                            .build()
+            );
 
             Player chief = plugin.getServer().getPlayer(nation.getChief());
             if (chief != null && chief.isOnline()) {
-                chief.sendMessage("§aThe city §e" + playerTeam.getName() + " §ahas joined your nation!");
+                plugin.getMessageManager().sendMessage(chief, "invitation.accept-notify-chief",
+                        MessageManager.placeholder()
+                                .add("city_name", playerTeam.getName())
+                                .build()
+                );
             }
         } else {
-            player.sendMessage("§cFailed to join nation. Please contact an administrator.");
+            plugin.getMessageManager().sendMessage(player, "invitation.accept-failed");
         }
     }
 

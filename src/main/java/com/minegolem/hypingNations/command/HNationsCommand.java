@@ -32,6 +32,7 @@ public class HNationsCommand implements CommandExecutor, TabCompleter {
         subCommands.put("invitecity", new InviteCityCommand(plugin));
         subCommands.put("acceptcity", new AcceptCityCommand(plugin));
         subCommands.put("leave", new LeaveCommand(plugin));
+        subCommands.put("delete", new DeleteCommand(plugin));
         subCommands.put("pact", new PactCommand(plugin));
         subCommands.put("tax", new TaxCommand(plugin));
         subCommands.put("admin", new AdminCommand(plugin));
@@ -44,7 +45,7 @@ public class HNationsCommand implements CommandExecutor, TabCompleter {
             if (sender instanceof Player player) {
                 subCommands.get("info").execute(player, args);
             } else {
-                sender.sendMessage("§cUsage: /hnations <subcommand>");
+                plugin.getMessageManager().sendMessage((Player) sender, "general.player-only");
             }
             return true;
         }
@@ -53,12 +54,16 @@ public class HNationsCommand implements CommandExecutor, TabCompleter {
         SubCommand subCommand = subCommands.get(subCommandName);
 
         if (subCommand == null) {
-            sender.sendMessage("§cUnknown command. Use /hnations help for a list of commands.");
+            if (sender instanceof Player player) {
+                plugin.getMessageManager().sendMessage(player, "general.unknown-command");
+            } else {
+                sender.sendMessage("§cUnknown command. Use /hnations help for a list of commands.");
+            }
             return true;
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage("§cOnly players can use this command.");
+            plugin.getMessageManager().sendMessage((Player) sender, "general.player-only");
             return true;
         }
 

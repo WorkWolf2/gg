@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.manager.MessageManager;
 import com.minegolem.hypingNations.manager.PactManager;
 import org.bukkit.entity.Player;
 
@@ -18,7 +19,7 @@ public class PactCommand implements SubCommand {
     @Override
     public void execute(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage("§cUsage: /hnations pact <propose|accept|deny|break> ...");
+            plugin.getMessageManager().sendMessage(player, "pact.usage");
             return;
         }
 
@@ -29,38 +30,40 @@ public class PactCommand implements SubCommand {
             case "accept" -> handleAccept(player, args);
             case "deny" -> handleDeny(player, args);
             case "break" -> handleBreak(player, args);
-            default -> player.sendMessage("§cUnknown action. Use: propose, accept, deny, break");
+            default -> plugin.getMessageManager().sendMessage(player, "pact.unknown-action");
         }
     }
 
     private void handlePropose(Player player, String[] args) {
         if (args.length < 3) {
-            player.sendMessage("§cUsage: /hnations pact propose <nation> <days>");
+            plugin.getMessageManager().sendMessage(player, "pact.propose.usage");
             return;
         }
 
         Nation playerNation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
         if (playerNation == null) {
-            player.sendMessage("§cYou are not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "pact.propose.not-in-nation");
             return;
         }
 
-        // AGGIORNATO: Usa il nuovo sistema di permessi
         if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_propose_pact")) {
-            player.sendMessage("§cYou don't have permission to propose pacts!");
-            player.sendMessage("§7Only the Chief or authorized members can propose pacts.");
+            plugin.getMessageManager().sendMessage(player, "pact.propose.no-permission");
             return;
         }
 
         String targetName = args[1];
         Nation targetNation = plugin.getNationManager().getNation(targetName);
         if (targetNation == null) {
-            player.sendMessage("§cNation not found: " + targetName);
+            plugin.getMessageManager().sendMessage(player, "pact.propose.nation-not-found",
+                    MessageManager.placeholder()
+                            .add("nation_name", targetName)
+                            .build()
+            );
             return;
         }
 
         if (targetNation.equals(playerNation)) {
-            player.sendMessage("§cYou cannot create a pact with your own nation!");
+            plugin.getMessageManager().sendMessage(player, "pact.propose.cannot-pact-self");
             return;
         }
 
@@ -68,162 +71,190 @@ public class PactCommand implements SubCommand {
         try {
             days = Integer.parseInt(args[2]);
         } catch (NumberFormatException e) {
-            player.sendMessage("§cInvalid number of days!");
+            plugin.getMessageManager().sendMessage(player, "pact.propose.invalid-days");
             return;
         }
 
         int maxDuration = plugin.getConfigManager().getNationConfig().getMaxPactDuration();
         if (days <= 0 || days > maxDuration) {
-            player.sendMessage("§cPact duration must be between 1 and " + maxDuration + " days!");
+            plugin.getMessageManager().sendMessage(player, "pact.propose.invalid-duration",
+                    MessageManager.placeholder()
+                            .add("max_duration", maxDuration)
+                            .build()
+            );
             return;
         }
 
         PactManager.Pact pact = plugin.getPactManager().proposePact(playerNation, targetNation, days);
 
-        player.sendMessage("§aPact proposed to §e" + targetName + " §afor §e" + days + " days§a!");
+        plugin.getMessageManager().sendMessage(player, "pact.propose.success",
+                MessageManager.placeholder()
+                        .add("nation_name", targetName)
+                        .add("days", days)
+                        .build()
+        );
 
         Player targetChief = plugin.getServer().getPlayer(targetNation.getChief());
         if (targetChief != null && targetChief.isOnline()) {
-            targetChief.sendMessage("§8§m                                                ");
-            targetChief.sendMessage("§b§lPact Proposal");
-            targetChief.sendMessage("");
-            targetChief.sendMessage("§e" + playerNation.getName() + " §7wants to form a pact!");
-            targetChief.sendMessage("§7Duration: §f" + days + " days");
-            targetChief.sendMessage("");
-            targetChief.sendMessage("§7§f/hnations pact accept " + playerNation.getName());
-            targetChief.sendMessage("§7§f/hnations pact deny " + playerNation.getName());
-            targetChief.sendMessage("§8§m                                                ");
+            plugin.getMessageManager().sendMessage(targetChief, "pact.propose.notify-target",
+                    MessageManager.placeholder()
+                            .add("proposer_nation", playerNation.getName())
+                            .add("days", days)
+                            .build()
+            );
         }
     }
 
     private void handleAccept(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage("§cUsage: /hnations pact accept <nation>");
+            plugin.getMessageManager().sendMessage(player, "pact.accept.usage");
             return;
         }
 
         Nation playerNation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
         if (playerNation == null) {
-            player.sendMessage("§cYou are not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "pact.accept.not-in-nation");
             return;
         }
 
-        // AGGIORNATO: Usa il nuovo sistema di permessi
         if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_create_pact")) {
-            player.sendMessage("§cYou don't have permission to accept pacts!");
-            player.sendMessage("§7Only the Chief or authorized members can accept pacts.");
+            plugin.getMessageManager().sendMessage(player, "pact.accept.no-permission");
             return;
         }
 
         String proposerName = args[1];
         Nation proposerNation = plugin.getNationManager().getNation(proposerName);
         if (proposerNation == null) {
-            player.sendMessage("§cNation not found: " + proposerName);
+            plugin.getMessageManager().sendMessage(player, "pact.accept.nation-not-found",
+                    MessageManager.placeholder()
+                            .add("nation_name", proposerName)
+                            .build()
+            );
             return;
         }
 
         boolean success = plugin.getPactManager().acceptPact(proposerNation, playerNation);
         if (success) {
-            player.sendMessage("§aPact accepted with §e" + proposerName + "§a!");
-            player.sendMessage("§7Your nations are now allies and cannot overclaim each other.");
+            plugin.getMessageManager().sendMessage(player, "pact.accept.success",
+                    MessageManager.placeholder()
+                            .add("nation_name", proposerName)
+                            .build()
+            );
 
             Player proposerChief = plugin.getServer().getPlayer(proposerNation.getChief());
             if (proposerChief != null && proposerChief.isOnline()) {
-                proposerChief.sendMessage("§a" + playerNation.getName() + " §aaccepted your pact proposal!");
-                proposerChief.sendMessage("§7You are now allies and cannot overclaim each other.");
+                plugin.getMessageManager().sendMessage(proposerChief, "pact.accept.notify-proposer",
+                        MessageManager.placeholder()
+                                .add("target_nation", playerNation.getName())
+                                .build()
+                );
             }
         } else {
-            player.sendMessage("§cNo pending pact from that nation!");
+            plugin.getMessageManager().sendMessage(player, "pact.accept.no-pending");
         }
     }
 
     private void handleDeny(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage("§cUsage: /hnations pact deny <nation>");
+            plugin.getMessageManager().sendMessage(player, "pact.deny.usage");
             return;
         }
 
         Nation playerNation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
         if (playerNation == null) {
-            player.sendMessage("§cYou are not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "pact.deny.not-in-nation");
             return;
         }
 
-        // I patti possono essere negati da chiunque abbia permessi di gestione
         if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_create_pact")) {
-            player.sendMessage("§cYou don't have permission to deny pacts!");
+            plugin.getMessageManager().sendMessage(player, "pact.deny.no-permission");
             return;
         }
 
         String proposerName = args[1];
         Nation proposerNation = plugin.getNationManager().getNation(proposerName);
         if (proposerNation == null) {
-            player.sendMessage("§cNation not found: " + proposerName);
+            plugin.getMessageManager().sendMessage(player, "pact.deny.nation-not-found",
+                    MessageManager.placeholder()
+                            .add("nation_name", proposerName)
+                            .build()
+            );
             return;
         }
 
         boolean success = plugin.getPactManager().denyPact(proposerNation, playerNation);
         if (success) {
-            player.sendMessage("§cPact denied from §e" + proposerName + "§c!");
+            plugin.getMessageManager().sendMessage(player, "pact.deny.success",
+                    MessageManager.placeholder()
+                            .add("nation_name", proposerName)
+                            .build()
+            );
 
             Player proposerChief = plugin.getServer().getPlayer(proposerNation.getChief());
             if (proposerChief != null && proposerChief.isOnline()) {
-                proposerChief.sendMessage("§c" + playerNation.getName() + " §cdenied your pact proposal!");
+                plugin.getMessageManager().sendMessage(proposerChief, "pact.deny.notify-proposer",
+                        MessageManager.placeholder()
+                                .add("target_nation", playerNation.getName())
+                                .build()
+                );
             }
         } else {
-            player.sendMessage("§cNo pending pact from that nation!");
+            plugin.getMessageManager().sendMessage(player, "pact.deny.no-pending");
         }
     }
 
     private void handleBreak(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage("§cUsage: /hnations pact break <nation>");
+            plugin.getMessageManager().sendMessage(player, "pact.break.usage");
             return;
         }
 
         Nation playerNation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
         if (playerNation == null) {
-            player.sendMessage("§cYou are not part of any nation!");
+            plugin.getMessageManager().sendMessage(player, "pact.break.not-in-nation");
             return;
         }
 
-        // AGGIORNATO: Usa il nuovo sistema di permessi
         if (!plugin.getPermissionManager().hasPermission(player.getUniqueId(), playerNation, "can_break_pact")) {
-            player.sendMessage("§cYou don't have permission to break pacts!");
-            player.sendMessage("§7Only the Chief or authorized members can break pacts.");
+            plugin.getMessageManager().sendMessage(player, "pact.break.no-permission");
             return;
         }
 
         String targetName = args[1];
         Nation targetNation = plugin.getNationManager().getNation(targetName);
         if (targetNation == null) {
-            player.sendMessage("§cNation not found: " + targetName);
+            plugin.getMessageManager().sendMessage(player, "pact.break.nation-not-found",
+                    MessageManager.placeholder()
+                            .add("nation_name", targetName)
+                            .build()
+            );
             return;
         }
 
         if (!playerNation.hasActivePactWith(targetNation.getId())) {
-            player.sendMessage("§cYou don't have an active pact with §e" + targetName + "§c!");
+            plugin.getMessageManager().sendMessage(player, "pact.break.no-active-pact",
+                    MessageManager.placeholder()
+                            .add("nation_name", targetName)
+                            .build()
+            );
             return;
         }
 
         boolean success = plugin.getPactManager().breakPact(playerNation, targetNation);
         if (success) {
-            player.sendMessage("§8§m                                                ");
-            player.sendMessage("§c§lPact Broken!");
-            player.sendMessage("");
-            player.sendMessage("§7Your nation has broken the pact with §e" + targetName);
-            player.sendMessage("§7You can now overclaim their territory.");
-            player.sendMessage("§8§m                                                ");
+            plugin.getMessageManager().sendMessage(player, "pact.break.success",
+                    MessageManager.placeholder()
+                            .add("nation_name", targetName)
+                            .build()
+            );
 
             Player targetChief = plugin.getServer().getPlayer(targetNation.getChief());
             if (targetChief != null && targetChief.isOnline()) {
-                targetChief.sendMessage("§8§m                                                ");
-                targetChief.sendMessage("§c§lPact Broken!");
-                targetChief.sendMessage("");
-                targetChief.sendMessage("§e" + playerNation.getName() + " §7has broken their pact");
-                targetChief.sendMessage("§7with your nation!");
-                targetChief.sendMessage("§7They can now overclaim your territory.");
-                targetChief.sendMessage("§8§m                                                ");
+                plugin.getMessageManager().sendMessage(targetChief, "pact.break.notify-target",
+                        MessageManager.placeholder()
+                                .add("initiator_nation", playerNation.getName())
+                                .build()
+                );
             }
 
             plugin.getLogger().info(
@@ -233,7 +264,7 @@ public class PactCommand implements SubCommand {
                     )
             );
         } else {
-            player.sendMessage("§cFailed to break pact. Please contact an administrator.");
+            plugin.getMessageManager().sendMessage(player, "pact.break.failed");
         }
     }
 

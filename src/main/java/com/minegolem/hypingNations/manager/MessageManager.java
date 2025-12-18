@@ -11,10 +11,7 @@ import java.util.Map;
 public class MessageManager {
 
     private final HypingNations plugin;
-    /**
-     * -- GETTER --
-     *  Get prefix
-     */
+
     @Getter
     private String prefix;
     private final Map<String, String> messages = new HashMap<>();
@@ -24,9 +21,6 @@ public class MessageManager {
         loadMessages();
     }
 
-    /**
-     * Load all messages from config
-     */
     public void loadMessages() {
         messages.clear();
 
@@ -43,9 +37,6 @@ public class MessageManager {
         plugin.getLogger().info("Loaded " + messages.size() + " messages");
     }
 
-    /**
-     * Recursively load messages from config sections
-     */
     private void loadMessagesRecursive(ConfigurationSection section, String path) {
         for (String key : section.getKeys(false)) {
             if (key.equals("prefix")) continue;
@@ -63,23 +54,15 @@ public class MessageManager {
         }
     }
 
-    /**
-     * Get a message by key
-     */
     public String getMessage(String key) {
         return messages.getOrDefault(key, "§cMessage not found: " + key);
     }
 
-    /**
-     * Get a message with placeholders replaced
-     */
     public String getMessage(String key, Map<String, String> placeholders) {
         String message = getMessage(key);
 
-        // Always replace prefix
         message = message.replace("{prefix}", prefix);
 
-        // Replace custom placeholders
         if (placeholders != null) {
             for (Map.Entry<String, String> entry : placeholders.entrySet()) {
                 message = message.replace("{" + entry.getKey() + "}", entry.getValue());
@@ -89,16 +72,10 @@ public class MessageManager {
         return message;
     }
 
-    /**
-     * Send a message to a player
-     */
     public void sendMessage(Player player, String key) {
         sendMessage(player, key, null);
     }
 
-    /**
-     * Send a message to a player with placeholders
-     */
     public void sendMessage(Player player, String key, Map<String, String> placeholders) {
         String message = getMessage(key, placeholders);
 
@@ -112,16 +89,10 @@ public class MessageManager {
         }
     }
 
-    /**
-     * Create a placeholder map builder
-     */
     public static PlaceholderBuilder placeholder() {
         return new PlaceholderBuilder();
     }
 
-    /**
-     * Builder for placeholder maps
-     */
     public static class PlaceholderBuilder {
         private final Map<String, String> placeholders = new HashMap<>();
 
@@ -150,9 +121,6 @@ public class MessageManager {
         }
     }
 
-    /**
-     * Reload messages
-     */
     public void reload() {
         loadMessages();
     }

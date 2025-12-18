@@ -45,14 +45,12 @@ public class DatabaseManager implements AutoCloseable {
         config.setUsername(username);
         config.setPassword(password);
 
-        // Pool settings
         config.setMinimumIdle(plugin.getConfig().getInt("database.mariadb.pool.minimum-idle", 2));
         config.setMaximumPoolSize(plugin.getConfig().getInt("database.mariadb.pool.maximum-pool-size", 10));
         config.setConnectionTimeout(plugin.getConfig().getLong("database.mariadb.pool.connection-timeout", 30000));
         config.setIdleTimeout(plugin.getConfig().getLong("database.mariadb.pool.idle-timeout", 600000));
         config.setMaxLifetime(plugin.getConfig().getLong("database.mariadb.pool.max-lifetime", 1800000));
 
-        // Performance settings
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
@@ -75,7 +73,6 @@ public class DatabaseManager implements AutoCloseable {
      */
     private void createTables() throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
-            // Nations table
             String nationsTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "nations (" +
                     "id VARCHAR(36) PRIMARY KEY," +
                     "name VARCHAR(64) UNIQUE NOT NULL," +
@@ -88,7 +85,6 @@ public class DatabaseManager implements AutoCloseable {
                     "INDEX idx_chief (chief)" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
-            // Member cities table
             String citiesTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "cities (" +
                     "nation_id VARCHAR(36) NOT NULL," +
                     "team_name VARCHAR(64) NOT NULL," +
@@ -98,7 +94,6 @@ public class DatabaseManager implements AutoCloseable {
                     "INDEX idx_team_name (team_name)" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 
-            // Pacts table
             String pactsTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "pacts (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY," +
                     "proposer_id VARCHAR(36) NOT NULL," +
@@ -144,7 +139,6 @@ public class DatabaseManager implements AutoCloseable {
             conn.setAutoCommit(false);
 
             try {
-                // Insert or update nation
                 String nationSql = "INSERT INTO " + tablePrefix + "nations " +
                         "(id, name, chief, capital, treasury, unpaid_days) VALUES (?, ?, ?, ?, ?, ?) " +
                         "ON DUPLICATE KEY UPDATE name=?, chief=?, capital=?, treasury=?, unpaid_days=?";
@@ -166,7 +160,6 @@ public class DatabaseManager implements AutoCloseable {
                     stmt.executeUpdate();
                 }
 
-                // Delete existing cities and re-insert
                 String deleteCities = "DELETE FROM " + tablePrefix + "cities WHERE nation_id = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(deleteCities)) {
                     stmt.setString(1, nation.getId().toString());
@@ -183,7 +176,6 @@ public class DatabaseManager implements AutoCloseable {
                     stmt.executeBatch();
                 }
 
-                // Save pacts
                 savePactsForNation(conn, nation);
 
                 conn.commit();
@@ -198,14 +190,12 @@ public class DatabaseManager implements AutoCloseable {
      * Save pacts for a nation
      */
     private void savePactsForNation(Connection conn, Nation nation) throws SQLException {
-        // Delete existing pacts
         String deletePacts = "DELETE FROM " + tablePrefix + "pacts WHERE proposer_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(deletePacts)) {
             stmt.setString(1, nation.getId().toString());
             stmt.executeUpdate();
         }
 
-        // Insert pacts
         String insertPact = "INSERT INTO " + tablePrefix + "pacts " +
                 "(proposer_id, target_id, duration_days, start_date, active) VALUES (?, ?, ?, ?, ?)";
 
@@ -236,7 +226,6 @@ public class DatabaseManager implements AutoCloseable {
         Map<UUID, Nation> nationMap = new HashMap<>();
 
         try (Connection conn = dataSource.getConnection()) {
-            // Load nations
             String nationSql = "SELECT * FROM " + tablePrefix + "nations";
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery(nationSql)) {
@@ -261,7 +250,6 @@ public class DatabaseManager implements AutoCloseable {
                 }
             }
 
-            // Load cities for each nation
             String citySql = "SELECT * FROM " + tablePrefix + "cities";
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery(citySql)) {

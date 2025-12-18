@@ -7,7 +7,6 @@ import java.util.Objects;
 
 @Getter
 public class NationConfig {
-    // ECONOMY
     private int minMembers;
     private int minClaims;
     private int creationPrice;
@@ -18,23 +17,15 @@ public class NationConfig {
     private int maxUnpaidDays;
     private String taxChargeSource;
 
-    // RANGE
-    // Base range applies to ALL roles unless overridden
-    // Role-specific ranges (if configured) take precedence over base range
     private int baseRecruitRange;
     private int perCityBonusRange;
 
-    // DIPLOMACY
     private boolean pactsEnabled;
     private int maxPactDuration;
     private boolean blockOverclaimWithPact;
 
-    // OVERCLAIM
-    // When false: prevents nation members from overclaiming other nations' claims
-    // When true: allows overclaiming (unless blocked by pacts)
     private boolean overclaimEnabled;
 
-    // STRUCTURE - Roles
     private RoleConfig chiefRole;
     private RoleConfig mayorRole;
     private RoleConfig deputyMayorRole;
@@ -92,38 +83,26 @@ public class NationConfig {
         this.deputyMayorRole = new RoleConfig(Objects.requireNonNull(nationRoles.getConfigurationSection("deputy_mayor")));
     }
 
-    /**
-     * Role configuration for nation-specific permissions
-     * These are ONLY for nation operations (inviting cities, managing pacts, etc.)
-     * For regular team operations (build, break, claim), use HypingTeams /team role
-     */
     @Getter
     public static class RoleConfig {
         private final String displayName;
 
-        // Nation management permissions
         private final boolean canInviteCityToNation;
         private final boolean canAcceptCity;
         private final boolean canRemoveCity;
 
-        // Diplomacy permissions
         private final boolean canProposePact;
-        private final boolean canCreatePact;  // Accept pacts
+        private final boolean canCreatePact;
         private final boolean canBreakPact;
 
-        // Leadership permissions
         private final boolean canTransferLeadership;
         private final boolean canDeleteNation;
 
-        // Player management (within nation context)
         private final boolean canInvitePlayer;
         private final boolean canKickPlayer;
 
-        // Role-specific settings
         private final int maxPactDurationDays;
 
-        // Role-specific range override (if 0, uses base range)
-        // This allows different roles to have different invitation ranges
         private final int inviteCityRangeBlocks;
 
         public RoleConfig(ConfigurationSection section) {
