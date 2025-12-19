@@ -35,6 +35,7 @@ public final class HypingNations extends JavaPlugin {
     private InvitationManager invitationManager;
 
     private NationPermissionManager permissionManager;
+    private NationMemberManager nationMemberManager;
 
     @Override
     public void onEnable() {
@@ -104,6 +105,7 @@ public final class HypingNations extends JavaPlugin {
         taxManager = new TaxManager(perChunkPrice, maxUnpaidDays);
 
         taxHistoryManager = new TaxHistoryManager(this);
+        nationMemberManager = new NationMemberManager(this);
 
         pactManager = new PactManager();
         rangeManager = new RangeManager(configManager.getNationConfig());
@@ -116,9 +118,10 @@ public final class HypingNations extends JavaPlugin {
         try {
             nationManager.loadNations();
 
-            // Load tax histories for all nations
+            // Load tax histories and roles for all nations
             for (var nation : nationManager.getAllNations()) {
                 taxHistoryManager.loadHistory(nation.getId());
+                nationMemberManager.loadRoles(nation.getId());
             }
 
             getLogger().info("Data loaded successfully from database");
@@ -209,6 +212,10 @@ public final class HypingNations extends JavaPlugin {
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(
                 new TeamClaimListener(this),
+                this
+        );
+        getServer().getPluginManager().registerEvents(
+                new MenuManager(this),
                 this
         );
         getLogger().info("Pact claim protection listener registered!");

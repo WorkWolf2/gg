@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.data.database;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.data.CityRef;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.role.NationRole;
 import com.minegolem.hypingNations.data.TaxHistory;
 import com.minegolem.hypingNations.manager.PactManager;
 import com.zaxxer.hikari.HikariConfig;
@@ -67,6 +68,7 @@ public class DatabaseManager implements AutoCloseable {
 
         createTables();
         createTaxHistoryTable();
+        createNationRolesTable();
         plugin.getLogger().info("Database initialized successfully!");
     }
 
@@ -119,6 +121,25 @@ public class DatabaseManager implements AutoCloseable {
         }
     }
 
+    private void createNationRolesTable() throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            String rolesTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "nation_roles (" +
+                    "nation_id VARCHAR(36) NOT NULL," +
+                    "player_id VARCHAR(36) NOT NULL," +
+                    "role VARCHAR(32) NOT NULL," +
+                    "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "PRIMARY KEY (nation_id, player_id)," +
+                    "FOREIGN KEY (nation_id) REFERENCES " + tablePrefix + "nations(id) ON DELETE CASCADE," +
+                    "INDEX idx_nation (nation_id)," +
+                    "INDEX idx_player (player_id)" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(rolesTable);
+            }
+        }
+    }
+
     private void createTaxHistoryTable() throws SQLException {
         try (Connection conn = dataSource.getConnection()) {
             String taxHistoryTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "tax_history (" +
@@ -150,6 +171,100 @@ public class DatabaseManager implements AutoCloseable {
                 e.printStackTrace();
             }
         });
+    }
+
+    public CompletableFuture<Void> saveNationRoleAsync(UUID nationId, UUID playerId, NationRole role) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                saveNationRole(nationId, playerId, role);
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to save nation role: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void saveNationRole(UUID nationId, UUID playerId, NationRole role) throws SQLException {
+        String sql = "INSERT INTO " + tablePrefix + "nation_roles (nation_id, player_id, role) " +
+                "VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE role = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nationId.toString());
+            stmt.setString(2, playerId.toString());
+            stmt.setString(3, role.name());
+            stmt.setString(4, role.name());
+
+            stmt.executeUpdate();
+        }
+    }
+
+    public Map<UUID, NationRole> loadNationRoles(UUID nationId) throws SQLException {
+        Map<UUID, NationRole> roles = new HashMap<>();
+
+        String sql = "SELECT player_id, role FROM " + tablePrefix + "nation_roles WHERE nation_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nationId.toString());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    UUID playerId = UUID.fromString(rs.getString("player_id"));
+                    NationRole role = NationRole.valueOf(rs.getString("role"));
+                    roles.put(playerId, role);
+                }
+            }
+        }
+
+        return roles;
+    }
+
+    public CompletableFuture<Void> deleteNationRoleAsync(UUID nationId, UUID playerId) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                deleteNationRole(nationId, playerId);
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to delete nation role: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void deleteNationRole(UUID nationId, UUID playerId) throws SQLException {
+        String sql = "DELETE FROM " + tablePrefix + "nation_roles WHERE nation_id = ? AND player_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nationId.toString());
+            stmt.setString(2, playerId.toString());
+            stmt.executeUpdate();
+        }
+    }
+
+    public CompletableFuture<Void> deleteAllNationRolesAsync(UUID nationId) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                deleteAllNationRoles(nationId);
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to delete nation roles: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void deleteAllNationRoles(UUID nationId) throws SQLException {
+        String sql = "DELETE FROM " + tablePrefix + "nation_roles WHERE nation_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nationId.toString());
+            stmt.executeUpdate();
+        }
     }
 
     /**

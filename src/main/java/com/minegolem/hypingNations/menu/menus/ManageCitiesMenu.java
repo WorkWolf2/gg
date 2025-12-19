@@ -242,12 +242,93 @@ public class ManageCitiesMenu {
         // Clicked on city
         CityRef city = cities.get(cityIndex);
 
-        if (isChief && !city.equals(nation.getCapital())) {
-            // Exclude city
-            player.closeInventory();
-            menuManager.openConfirmationMenu(player, "EXCLUDE_CITY", () -> {
-                excludeCity(player, nation, city);
-            }, city);
+        // Open city action menu
+        openCityActionMenu(player, nation, city, isChief);
+    }
+
+    private void openCityActionMenu(Player player, Nation nation, CityRef city, boolean isChief) {
+        Inventory inv = Bukkit.createInventory(null, 27, color("&6Manage: &e" + city.teamName()));
+
+        Team team = TeamAPI.getTeamByName(city.teamName());
+        if (team == null) {
+            player.sendMessage(color("&cCity not found!"));
+            return;
+        }
+
+        // View Members button
+        ItemStack viewMembers = new ItemStack(Material.PLAYER_HEAD);
+        ItemMeta viewMeta = viewMembers.getItemMeta();
+        if (viewMeta != null) {
+            viewMeta.setDisplayName(color("&e&lView Members"));
+            viewMeta.setLore(List.of(
+                    color("&7Members: &f" + team.getMembers().size()),
+                    "",
+                    color("&eClick to view members")
+            ));
+            viewMembers.setItemMeta(viewMeta);
+        }
+        inv.setItem(11, viewMembers);
+
+        // Exclude button (only for non-capital cities and chief)
+        boolean isCapital = nation.getCapital().equals(city);
+        if (isChief && !isCapital) {
+            ItemStack exclude = new ItemStack(Material.RED_WOOL);
+            ItemMeta excludeMeta = exclude.getItemMeta();
+            if (excludeMeta != null) {
+                excludeMeta.setDisplayName(color("&c&lExclude City"));
+                excludeMeta.setLore(List.of(
+                        color("&7Remove this city from"),
+                        color("&7the nation"),
+                        "",
+                        color("&cClick to exclude")
+                ));
+                exclude.setItemMeta(excludeMeta);
+            }
+            inv.setItem(15, exclude);
+        }
+
+        // Back button
+        ItemStack back = new ItemStack(Material.BARRIER);
+        ItemMeta backMeta = back.getItemMeta();
+        if (backMeta != null) {
+            backMeta.setDisplayName(color("&cBack"));
+            back.setItemMeta(backMeta);
+        }
+        inv.setItem(22, back);
+
+        player.openInventory(inv);
+
+        // Store context
+        MenuManager.ActiveMenu menu = new MenuManager.ActiveMenu(
+                MenuManager.MenuType.CITY_ACTION, nation.getId(), 0
+        );
+        menu.setActionData(city);
+        menuManager.getActiveMenus().put(player.getUniqueId(), menu);
+    }
+
+    public void handleCityAction(Player player, int slot, Nation nation, CityRef city) {
+        boolean isChief = nation.getChief().equals(player.getUniqueId());
+
+        switch (slot) {
+            case 11 -> {
+                // View Members
+                player.closeInventory();
+                menuManager.openViewMembersMenu(player, nation, city, 0);
+            }
+            case 15 -> {
+                // Exclude City
+                if (isChief && !city.equals(nation.getCapital())) {
+                    player.closeInventory();
+                    menuManager.openConfirmationMenu(player, "EXCLUDE_CITY", () -> {
+                        excludeCity(player, nation, city);
+                    }, city);
+                }
+            }
+            case 22 -> {
+                // Back
+                player.closeInventory();
+                menuManager.openManageCitiesMenu(player, 0);
+            }
         }
     }
 

@@ -1,6 +1,10 @@
 package com.minegolem.hypingNations.menu.sign;
 
+import dev.canable.hypingteams.lib.signgui.SignGUI;
+import dev.canable.hypingteams.lib.signgui.SignGUIAction;
+import dev.canable.hypingteams.lib.signgui.exception.SignGUIVersionException;
 import org.bukkit.Bukkit;
+import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -11,22 +15,16 @@ import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 
 public final class SignMenuFactory {
 
     private final Plugin plugin;
-    private final Map<Player, Menu> inputs;
 
     public SignMenuFactory(Plugin plugin) {
         this.plugin = plugin;
-        this.inputs = new ConcurrentHashMap<>();
-
-        Bukkit.getPluginManager().registerEvents(new MenuListener(), plugin);
     }
 
     public Menu newMenu() {
@@ -35,18 +33,18 @@ public final class SignMenuFactory {
 
     public final class Menu {
 
-        private String[] lines;
+        private String[] lines = new String[]{"", "", "", ""};
         private BiPredicate<Player, String[]> response;
 
         private Menu() {
-            this.lines = new String[]{"", "", "", ""};
         }
 
         public Menu withLines(String... lines) {
             if (lines.length > 4) {
-                throw new IllegalArgumentException("Sign can only have 4 lines");
+                throw new IllegalArgumentException("A sign can only have 4 lines");
             }
-            this.lines = Arrays.copyOf(lines, 4);
+            this.lines = new String[]{"", "", "", ""};
+            System.arraycopy(lines, 0, this.lines, 0, lines.length);
             return this;
         }
 
@@ -59,69 +57,34 @@ public final class SignMenuFactory {
             Objects.requireNonNull(player, "player");
             Objects.requireNonNull(response, "response");
 
-            inputs.put(player, this);
-
             try {
-                Location location = player.getLocation();
-                Material signType = Material.OAK_SIGN;
+                SignGUI gui = SignGUI.builder()
+                        .setLines(lines)
+                        .setType(Material.OAK_SIGN)
+                        .setColor(DyeColor.BLACK)
+                        .setHandler((p, result) -> {
+                            String[] input = result.getLinesWithoutColor();
 
-                Class<?> packetPlayOutOpenSignClass = getNMSClass("PacketPlayOutOpenSignEditor");
-                Class<?> blockPositionClass = getNMSClass("BlockPosition");
-                Class<?> packetClass = getNMSClass("Packet");
+                            boolean accepted = response.test(p, input);
 
-                Object blockPosition = blockPositionClass.getConstructor(int.class, int.class, int.class)
-                        .newInstance(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+                            if (accepted) {
+                                return Collections.emptyList();
+                            }
 
-                Object packet = packetPlayOutOpenSignClass.getConstructor(blockPositionClass, boolean.class)
-                        .newInstance(blockPosition, true);
+                            // Re-open the sign with previous input
+                            return List.of(
+                                    SignGUIAction.displayNewLines(input)
+                            );
+                        })
+                        .build();
 
-                sendPacket(player, packet);
+                gui.open(player);
 
-            } catch (Exception e) {
+            } catch (SignGUIVersionException e) {
+                player.sendMessage("§cThis server version does not support Sign GUI.");
                 e.printStackTrace();
-                player.sendMessage("§cFailed to open sign menu. Please try again.");
             }
-        }
-
-        private void handleResponse(Player player, String[] lines) {
-            if (response.test(player, lines)) {
-                inputs.remove(player);
-            } else {
-                open(player);
-            }
-        }
-    }
-
-    private final class MenuListener implements Listener {
-
-        @EventHandler
-        public void onQuit(PlayerQuitEvent event) {
-            inputs.remove(event.getPlayer());
-        }
-    }
-
-    private void sendPacket(Player player, Object packet) {
-        try {
-            Method getHandle = player.getClass().getMethod("getHandle");
-            Object entityPlayer = getHandle.invoke(player);
-
-            Field connectionField = entityPlayer.getClass().getField("b");
-            Object connection = connectionField.get(entityPlayer);
-
-            Method sendPacket = connection.getClass().getMethod("a", getNMSClass("Packet"));
-            sendPacket.invoke(connection, packet);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private Class<?> getNMSClass(String name) {
-        try {
-            String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-            return Class.forName("net.minecraft.server." + version + "." + name);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }
+

@@ -1,6 +1,7 @@
 package com.minegolem.hypingNations.menu;
 
 import com.minegolem.hypingNations.HypingNations;
+import com.minegolem.hypingNations.data.CityRef;
 import com.minegolem.hypingNations.data.Nation;
 import com.minegolem.hypingNations.menu.config.MenuConfig;
 import com.minegolem.hypingNations.menu.menus.*;
@@ -25,6 +26,7 @@ public class MenuManager implements Listener {
     private MenuConfig menuConfig;
 
     // Active menu tracking
+    @Getter
     private final Map<UUID, ActiveMenu> activeMenus = new ConcurrentHashMap<>();
 
     // Menu types
@@ -33,6 +35,7 @@ public class MenuManager implements Listener {
     private ManagePactsMenu managePactsMenu;
     private ConfirmationMenu confirmationMenu;
     private TaxHistoryMenu taxHistoryMenu;
+    private ViewMembersMenu viewMembersMenu;
 
     public MenuManager(HypingNations plugin) {
         this.plugin = plugin;
@@ -53,6 +56,16 @@ public class MenuManager implements Listener {
         managePactsMenu = new ManagePactsMenu(plugin, this);
         confirmationMenu = new ConfirmationMenu(plugin, this);
         taxHistoryMenu = new TaxHistoryMenu(plugin, this);
+        viewMembersMenu = new ViewMembersMenu(plugin, this);
+    }
+
+    public void openViewMembersMenu(Player player, Nation nation, CityRef city, int page) {
+        Inventory inv = viewMembersMenu.create(player, nation, city, page);
+        player.openInventory(inv);
+
+        ActiveMenu menu = new ActiveMenu(MenuType.VIEW_MEMBERS, nation.getId(), page);
+        menu.setActionData(city);
+        activeMenus.put(player.getUniqueId(), menu);
     }
 
     public void openManageNationMenu(Player player) {
@@ -139,6 +152,25 @@ public class MenuManager implements Listener {
             case MANAGE_PACTS -> managePactsMenu.handleClick(player, e.getSlot(), nation, activeMenu);
             case CONFIRMATION -> confirmationMenu.handleClick(player, e.getSlot(), activeMenu);
             case TAX_HISTORY -> taxHistoryMenu.handleClick(player, e.getSlot(), nation, activeMenu);
+            case VIEW_MEMBERS -> {
+                CityRef city = (CityRef) activeMenu.getActionData();
+                if (city != null) {
+                    viewMembersMenu.handleClick(player, e.getSlot(), nation, city, activeMenu);
+                }
+            }
+            case CITY_ACTION -> {
+                CityRef city = (CityRef) activeMenu.getActionData();
+                if (city != null) {
+                    manageCitiesMenu.handleCityAction(player, e.getSlot(), nation, city);
+                }
+            }
+            case ROLE_SELECTION -> {
+                ViewMembersMenu.RoleSelectionData data =
+                        (ViewMembersMenu.RoleSelectionData) activeMenu.getActionData();
+                if (data != null) {
+                    viewMembersMenu.handleRoleSelection(player, e.getSlot(), nation, data);
+                }
+            }
         }
     }
 
@@ -178,6 +210,10 @@ public class MenuManager implements Listener {
         MANAGE_CITIES,
         MANAGE_PACTS,
         CONFIRMATION,
-        TAX_HISTORY
+        TAX_HISTORY,
+        VIEW_MEMBERS,
+        CITY_ACTION,
+        ROLE_SELECTION
     }
+
 }
