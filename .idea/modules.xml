@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/HypingNations.main.iml" filepath="$PROJECT_DIR$/.idea/modules/HypingNations.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/HypingNations.test.iml" filepath="$PROJECT_DIR$/.idea/modules/HypingNations.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/HypingNations.iml" filepath="$PROJECT_DIR$/.idea/modules/HypingNations.iml" group="HypingNations" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/HypingNations_main.iml" filepath="$PROJECT_DIR$/.idea/modules/HypingNations_main.iml" group="HypingNations" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/HypingNations_test.iml" filepath="$PROJECT_DIR$/.idea/modules/HypingNations_test.iml" group="HypingNations" />
     </modules>
   </component>
 </project>

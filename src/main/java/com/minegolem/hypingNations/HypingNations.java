@@ -5,12 +5,10 @@ import com.minegolem.hypingNations.config.ConfigManager;
 import com.minegolem.hypingNations.data.database.DatabaseManager;
 import com.minegolem.hypingNations.listener.TeamClaimListener;
 import com.minegolem.hypingNations.manager.*;
+import com.minegolem.hypingNations.menu.MenuManager;
 import com.minegolem.hypingNations.role.NationPermissionManager;
 import com.minegolem.hypingNations.service.DatabasePersistenceService;
-import com.minegolem.hypingNations.task.BackupTask;
-import com.minegolem.hypingNations.task.InvitationCleanupTask;
-import com.minegolem.hypingNations.task.NationTaxTask;
-import com.minegolem.hypingNations.task.PactCleanupTask;
+import com.minegolem.hypingNations.task.*;
 import com.tcoded.folialib.FoliaLib;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,12 +22,14 @@ public final class HypingNations extends JavaPlugin {
 
     private ConfigManager configManager;
     private MessageManager messageManager;
+    private MenuManager menuManager;
     private FoliaLib foliaLib;
     private DatabaseManager databaseManager;
     private DatabasePersistenceService persistenceService;
 
     private NationManager nationManager;
     private TaxManager taxManager;
+    private TaxHistoryManager taxHistoryManager;
     private PactManager pactManager;
     private RangeManager rangeManager;
     private InvitationManager invitationManager;
@@ -54,6 +54,9 @@ public final class HypingNations extends JavaPlugin {
         loadData();
         startTasks();
         registerCommands();
+
+        // Initialize menu manager
+        menuManager = new MenuManager(this);
 
         getLogger().info("HypingNations enabled!");
     }
@@ -100,6 +103,8 @@ public final class HypingNations extends JavaPlugin {
         int maxUnpaidDays = configManager.getNationConfig().getMaxUnpaidDays();
         taxManager = new TaxManager(perChunkPrice, maxUnpaidDays);
 
+        taxHistoryManager = new TaxHistoryManager(this);
+
         pactManager = new PactManager();
         rangeManager = new RangeManager(configManager.getNationConfig());
         invitationManager = new InvitationManager(30);
@@ -110,6 +115,12 @@ public final class HypingNations extends JavaPlugin {
     private void loadData() {
         try {
             nationManager.loadNations();
+
+            // Load tax histories for all nations
+            for (var nation : nationManager.getAllNations()) {
+                taxHistoryManager.loadHistory(nation.getId());
+            }
+
             getLogger().info("Data loaded successfully from database");
         } catch (Exception e) {
             getLogger().severe("Failed to load data: " + e.getMessage());
@@ -128,9 +139,12 @@ public final class HypingNations extends JavaPlugin {
     }
 
     private void startTasks() {
-        NationTaxTask taxTask = new NationTaxTask(foliaLib, nationManager, taxManager, getLogger());
+        // Daily tax task
+        NationTaxTask taxTask = new NationTaxTask(foliaLib, nationManager, taxManager,
+                taxHistoryManager, getLogger());
         taxTask.startDaily();
 
+        // Invitation cleanup task (every 5 minutes)
         InvitationCleanupTask cleanupTask = new InvitationCleanupTask(invitationManager);
         foliaLib.getScheduler().runTimerAsync(
                 cleanupTask,
@@ -138,6 +152,7 @@ public final class HypingNations extends JavaPlugin {
                 20L * 60 * 5
         );
 
+        // Pact cleanup task (every hour)
         PactCleanupTask pactCleanupTask = new PactCleanupTask(pactManager);
         foliaLib.getScheduler().runTimerAsync(
                 pactCleanupTask,
@@ -145,12 +160,22 @@ public final class HypingNations extends JavaPlugin {
                 20L * 60 * 60
         );
 
+        // Automatic tax checker (every 5 minutes)
+        AutomaticTaxCheckerTask taxCheckerTask = new AutomaticTaxCheckerTask(this);
+        foliaLib.getScheduler().runTimerAsync(
+                taxCheckerTask,
+                20L * 60 * 5,
+                20L * 60 * 5
+        );
+
+        // Auto-save task (every 10 minutes)
         foliaLib.getScheduler().runTimerAsync(
                 this::saveData,
                 20L * 60 * 10,
                 20L * 60 * 10
         );
 
+        // Backup task
         if (getConfig().getBoolean("database.backup.enabled", true)) {
             int intervalHours = getConfig().getInt("database.backup.interval-hours", 6);
             BackupTask backupTask = new BackupTask(this);
@@ -168,6 +193,7 @@ public final class HypingNations extends JavaPlugin {
     }
 
     private void registerCommands() {
+        // Main command
         HNationsCommand command = new HNationsCommand(this);
         Objects.requireNonNull(getCommand("hnations")).setExecutor(command);
         Objects.requireNonNull(getCommand("hnations")).setTabCompleter(command);
@@ -200,6 +226,10 @@ public final class HypingNations extends JavaPlugin {
 
         rangeManager = new RangeManager(configManager.getNationConfig());
         permissionManager = new NationPermissionManager(this);
+
+        if (menuManager != null) {
+            menuManager.reload();
+        }
 
         getLogger().info("Configuration reloaded!");
     }

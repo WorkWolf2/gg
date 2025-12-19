@@ -50,11 +50,10 @@ public class HypingNationsExpansion extends PlaceholderExpansion {
 
         switch (params.toLowerCase()) {
             case "nation_name":
-                return nation != null ? nation.getName() : "None";
+                return nation != null ? nation.getName() : plugin.getMessageManager().getMessage("placeholders.nation_name");
 
             case "role":
                 if (nation == null) return "None";
-                // AGGIORNATO: Usa il nuovo sistema di permessi
                 return plugin.getPermissionManager().getRoleDisplayName(player.getUniqueId(), nation);
 
             case "tax_next_time":

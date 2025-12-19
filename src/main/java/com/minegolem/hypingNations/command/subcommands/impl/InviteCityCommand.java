@@ -8,6 +8,7 @@ import com.minegolem.hypingNations.manager.MessageManager;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
 import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -20,7 +21,8 @@ public class InviteCityCommand implements SubCommand {
     }
 
     @Override
-    public void execute(Player player, String[] args) {
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
         if (args.length < 1) {
             player.sendMessage("§cUsage: " + getUsage());
             return;

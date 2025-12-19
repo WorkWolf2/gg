@@ -5,6 +5,7 @@ import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
 import com.minegolem.hypingNations.manager.MessageManager;
 import com.minegolem.hypingNations.manager.PactManager;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -17,7 +18,8 @@ public class PactCommand implements SubCommand {
     }
 
     @Override
-    public void execute(Player player, String[] args) {
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
         if (args.length < 1) {
             plugin.getMessageManager().sendMessage(player, "pact.usage");
             return;

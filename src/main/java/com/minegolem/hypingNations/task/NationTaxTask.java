@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.task;
 import com.minegolem.hypingNations.data.Nation;
 import com.minegolem.hypingNations.manager.MessageManager;
 import com.minegolem.hypingNations.manager.NationManager;
+import com.minegolem.hypingNations.manager.TaxHistoryManager;
 import com.minegolem.hypingNations.manager.TaxManager;
 import com.tcoded.folialib.FoliaLib;
 import dev.canable.hypingteams.api.TeamAPI;
@@ -14,12 +15,15 @@ public class NationTaxTask implements Runnable {
     private final FoliaLib foliaLib;
     private final NationManager nationManager;
     private final TaxManager taxManager;
+    private final TaxHistoryManager taxHistoryManager;
     private final Logger logger;
 
-    public NationTaxTask(FoliaLib foliaLib, NationManager nationManager, TaxManager taxManager, Logger logger) {
+    public NationTaxTask(FoliaLib foliaLib, NationManager nationManager, TaxManager taxManager,
+                         TaxHistoryManager taxHistoryManager, Logger logger) {
         this.foliaLib = foliaLib;
         this.nationManager = nationManager;
         this.taxManager = taxManager;
+        this.taxHistoryManager = taxHistoryManager;
         this.logger = logger;
     }
 
@@ -41,6 +45,7 @@ public class NationTaxTask implements Runnable {
 
     private void processTaxForNation(Nation nation) {
         double taxAmount = taxManager.calculateTax(nation);
+        int chunks = nation.getTotalChunks();
 
         Team capitalTeam = TeamAPI.getTeamByName(nation.getCapital().teamName());
 
@@ -51,16 +56,29 @@ public class NationTaxTask implements Runnable {
         }
 
         if (capitalTeam.getBalance() >= taxAmount) {
+            // Successful payment
             capitalTeam.addBalance(-taxAmount);
             taxManager.recordPayment(nation);
+
+            // Record in tax history
+            taxHistoryManager.recordTaxPayment(nation.getId(), taxAmount, chunks, true);
+
             logger.info("Nation " + nation.getName() + " paid tax of " + taxAmount);
         } else {
+            // Failed payment
             taxManager.recordMissedPayment(nation);
+
+            // Record in tax history
+            taxHistoryManager.recordTaxPayment(nation.getId(), taxAmount, chunks, false);
+
             logger.warning("Nation " + nation.getName() + " missed tax payment. Unpaid days: " + nation.getUnpaidDays());
 
             if (taxManager.shouldDissolve(nation)) {
                 logger.warning("Nation " + nation.getName() + " dissolved due to unpaid taxes.");
                 nationManager.deleteNation(nation.getName());
+
+                // Clear tax history for dissolved nation
+                taxHistoryManager.clearHistory(nation.getId());
             }
         }
     }

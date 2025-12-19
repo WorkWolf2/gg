@@ -6,6 +6,7 @@ import com.minegolem.hypingNations.data.Nation;
 import com.minegolem.hypingNations.manager.MessageManager;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -18,7 +19,8 @@ public class DeleteCommand implements SubCommand {
     }
 
     @Override
-    public void execute(Player player, String[] args) {
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
         Nation nation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
 
         if (nation == null) {

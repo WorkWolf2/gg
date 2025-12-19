@@ -2,6 +2,8 @@ package com.minegolem.hypingNations.manager;
 
 import com.minegolem.hypingNations.HypingNations;
 import lombok.Getter;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
@@ -76,16 +78,29 @@ public class MessageManager {
         sendMessage(player, key, null);
     }
 
-    public void sendMessage(Player player, String key, Map<String, String> placeholders) {
+    public void sendMessage(CommandSender sender, String key) {
+        sendMessage(sender, key, null);
+    }
+
+    public void sendMessage(CommandSender sender, String key, Map<String, String> placeholders) {
         String message = getMessage(key, placeholders);
 
-        // Handle multi-line messages
-        if (message.contains("\n")) {
-            for (String line : message.split("\n")) {
-                player.sendMessage(line);
+        if (sender instanceof Player player) {
+            if (message.contains("\n")) {
+                for (String line : message.split("\n")) {
+                    player.sendMessage(line);
+                }
+            } else {
+                player.sendMessage(message);
             }
         } else {
-            player.sendMessage(message);
+            if (message.contains("\n")) {
+                for (String line : message.split("\n")) {
+                    sender.sendMessage(line);
+                }
+            } else {
+                sender.sendMessage(message);
+            }
         }
     }
 

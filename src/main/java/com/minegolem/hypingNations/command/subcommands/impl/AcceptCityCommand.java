@@ -7,6 +7,7 @@ import com.minegolem.hypingNations.manager.InvitationManager;
 import com.minegolem.hypingNations.manager.MessageManager;
 import dev.canable.hypingteams.api.TeamAPI;
 import dev.canable.hypingteams.object.Team;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Optional;
@@ -20,7 +21,9 @@ public class AcceptCityCommand implements SubCommand {
     }
 
     @Override
-    public void execute(Player player, String[] args) {
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
+
         Team playerTeam = TeamAPI.getTeamByPlayer(player);
         if (playerTeam == null) {
             plugin.getMessageManager().sendMessage(player, "invitation.must-be-in-team");

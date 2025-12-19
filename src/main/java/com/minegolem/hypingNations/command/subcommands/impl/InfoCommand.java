@@ -5,6 +5,7 @@ import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.data.Nation;
 import com.minegolem.hypingNations.manager.MessageManager;
 import com.minegolem.hypingNations.manager.PactManager;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.text.DecimalFormat;
@@ -19,7 +20,8 @@ public class InfoCommand implements SubCommand {
     }
 
     @Override
-    public void execute(Player player, String[] args) {
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
         Nation nation = plugin.getNationManager().getNationByPlayer(player.getUniqueId());
 
         if (nation == null) {

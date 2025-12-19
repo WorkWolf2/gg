@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.data.database;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.data.CityRef;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.data.TaxHistory;
 import com.minegolem.hypingNations.manager.PactManager;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -65,6 +66,7 @@ public class DatabaseManager implements AutoCloseable {
         this.dataSource = new HikariDataSource(config);
 
         createTables();
+        createTaxHistoryTable();
         plugin.getLogger().info("Database initialized successfully!");
     }
 
@@ -113,6 +115,25 @@ public class DatabaseManager implements AutoCloseable {
                 stmt.execute(nationsTable);
                 stmt.execute(citiesTable);
                 stmt.execute(pactsTable);
+            }
+        }
+    }
+
+    private void createTaxHistoryTable() throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            String taxHistoryTable = "CREATE TABLE IF NOT EXISTS " + tablePrefix + "tax_history (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY," +
+                    "nation_id VARCHAR(36) NOT NULL," +
+                    "timestamp TIMESTAMP NOT NULL," +
+                    "amount DOUBLE NOT NULL," +
+                    "chunks INT NOT NULL," +
+                    "success BOOLEAN NOT NULL," +
+                    "INDEX idx_nation_id (nation_id)," +
+                    "INDEX idx_timestamp (timestamp)" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(taxHistoryTable);
             }
         }
     }
@@ -392,6 +413,86 @@ public class DatabaseManager implements AutoCloseable {
             return false;
         }
     }
+
+    public CompletableFuture<Void> saveTaxEntryAsync(TaxHistory.TaxEntry entry) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                saveTaxEntry(entry);
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to save tax entry: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void saveTaxEntry(TaxHistory.TaxEntry entry) throws SQLException {
+        String sql = "INSERT INTO " + tablePrefix + "tax_history " +
+                "(nation_id, timestamp, amount, chunks, success) VALUES (?, ?, ?, ?, ?)";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, entry.getNationId().toString());
+            stmt.setTimestamp(2, java.sql.Timestamp.valueOf(entry.getTimestamp()));
+            stmt.setDouble(3, entry.getAmount());
+            stmt.setInt(4, entry.getChunks());
+            stmt.setBoolean(5, entry.isSuccess());
+
+            stmt.executeUpdate();
+        }
+    }
+
+    public List<TaxHistory.TaxEntry> loadTaxHistory(UUID nationId) throws SQLException {
+        List<TaxHistory.TaxEntry> entries = new ArrayList<>();
+
+        String sql = "SELECT * FROM " + tablePrefix + "tax_history " +
+                "WHERE nation_id = ? ORDER BY timestamp DESC LIMIT 100";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nationId.toString());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    TaxHistory.TaxEntry entry = new TaxHistory.TaxEntry(
+                            UUID.fromString(rs.getString("nation_id")),
+                            rs.getTimestamp("timestamp").toLocalDateTime(),
+                            rs.getDouble("amount"),
+                            rs.getInt("chunks"),
+                            rs.getBoolean("success")
+                    );
+                    entries.add(entry);
+                }
+            }
+        }
+
+        return entries;
+    }
+
+    public CompletableFuture<Void> deleteTaxHistoryAsync(UUID nationId) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                deleteTaxHistory(nationId);
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to delete tax history: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void deleteTaxHistory(UUID nationId) throws SQLException {
+        String sql = "DELETE FROM " + tablePrefix + "tax_history WHERE nation_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, nationId.toString());
+            stmt.executeUpdate();
+        }
+    }
+
+
 
     /**
      * Clean old backups

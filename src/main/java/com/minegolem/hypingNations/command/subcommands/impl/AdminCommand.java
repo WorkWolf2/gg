@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.manager.MessageManager;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -17,7 +18,9 @@ public class AdminCommand implements SubCommand {
     }
 
     @Override
-    public void execute(Player player, String[] args) {
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
+
         if (!player.hasPermission("hypingnations.admin")) {
             plugin.getMessageManager().sendMessage(player, "general.no-permission");
             return;

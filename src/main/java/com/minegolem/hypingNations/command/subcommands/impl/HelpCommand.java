@@ -2,6 +2,7 @@ package com.minegolem.hypingNations.command.subcommands.impl;
 
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -16,7 +17,9 @@ public class HelpCommand implements SubCommand {
     }
 
     @Override
-    public void execute(Player player, String[] args) {
+    public void execute(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
+
         player.sendMessage("§8§m                                                ");
         player.sendMessage("§6§lHypingNations Commands");
         player.sendMessage("");

@@ -3,6 +3,9 @@ package com.minegolem.hypingNations.command;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.command.subcommands.SubCommand;
 import com.minegolem.hypingNations.command.subcommands.impl.*;
+import com.minegolem.hypingNations.command.subcommands.impl.menu.ManageCitiesCommand;
+import com.minegolem.hypingNations.command.subcommands.impl.menu.ManageNationCommand;
+import com.minegolem.hypingNations.command.subcommands.impl.menu.ManagePactsCommand;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -37,15 +40,17 @@ public class HNationsCommand implements CommandExecutor, TabCompleter {
         subCommands.put("tax", new TaxCommand(plugin));
         subCommands.put("admin", new AdminCommand(plugin));
         subCommands.put("help", new HelpCommand(plugin, subCommands));
+        subCommands.put("managecities", new ManageCitiesCommand(plugin));
+        subCommands.put("managenations", new ManageNationCommand(plugin));
+        subCommands.put("managepacts", new ManagePactsCommand(plugin));
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
-            if (sender instanceof Player player) {
-                subCommands.get("info").execute(player, args);
-            } else {
-                plugin.getMessageManager().sendMessage((Player) sender, "general.player-only");
+            SubCommand info = subCommands.get("info");
+            if (info != null) {
+                info.execute(sender, args);
             }
             return true;
         }
@@ -54,21 +59,17 @@ public class HNationsCommand implements CommandExecutor, TabCompleter {
         SubCommand subCommand = subCommands.get(subCommandName);
 
         if (subCommand == null) {
-            if (sender instanceof Player player) {
-                plugin.getMessageManager().sendMessage(player, "general.unknown-command");
-            } else {
-                sender.sendMessage("§cUnknown command. Use /hnations help for a list of commands.");
-            }
+            plugin.getMessageManager().sendMessage(sender, "general.unknown-command");
             return true;
         }
 
-        if (!(sender instanceof Player)) {
-            plugin.getMessageManager().sendMessage((Player) sender, "general.player-only");
+        if (subCommand.getPermission() != null && !sender.hasPermission(subCommand.getPermission())) {
+            plugin.getMessageManager().sendMessage(sender, "general.no-permission");
             return true;
         }
 
         String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
-        subCommand.execute((Player) sender, subArgs);
+        subCommand.execute(sender, subArgs);
         return true;
     }
 

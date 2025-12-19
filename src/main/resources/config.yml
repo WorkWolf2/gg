@@ -144,6 +144,7 @@ messages:
     player-only: "{prefix}§cOnly players can use this command!"
     unknown-command: "{prefix}§cUnknown command. Use §f/hnations help §cfor help."
     reload-success: "{prefix}§aConfiguration reloaded successfully!"
+    no-player-found: "{prefix}&cNo player found"
 
   admin:
     usage: "{prefix}§cUsage: /hnations admin <reload>"
@@ -389,3 +390,358 @@ messages:
       §6§lHypingNations Commands
 
     footer: "§8§m                                                "
+
+  placeholders:
+    nation_name: "None"
+
+menus:
+  # =================================
+  # MANAGE NATION MENU
+  # =================================
+  manage-nation:
+    title: "&6&lManage Nation: &e{nation}"
+    size: 54
+
+    dissolve-button:
+      slot: 49
+      material: BARRIER
+      name: "&c&lDissolve Nation"
+      lore:
+        - "&7Permanently delete your nation"
+        - "&7and remove all member cities."
+        - ""
+        - "&c&lWARNING: This cannot be undone!"
+        - ""
+        - "&eClick to dissolve"
+      custom-model-data: 0
+      glowing: false
+
+    rename-button:
+      slot: 22
+      material: NAME_TAG
+      name: "&e&lRename Nation"
+      lore:
+        - "&7Change your nation's name"
+        - ""
+        - "&eClick to rename"
+      custom-model-data: 0
+      glowing: false
+
+    info-button:
+      slot: 13
+      material: BOOK
+      name: "&6&lNation Information"
+      lore:
+        - "&7Nation: &e{nation}"
+        - "&7Chief: &f{chief}"
+        - "&7Capital: &f{capital}"
+        - ""
+        - "&e&lStatistics:"
+        - "&7Total Members: &f{members}"
+        - "&7Total Cities: &f{cities}"
+        - "&7Total Claims: &f{total_chunks}"
+        - ""
+        - "&6&lEconomy:"
+        - "&7Treasury: &f${treasury}"
+        - "&7Tax per Chunk: &f${tax_per_chunk}"
+        - "&7Next Tax: &f${next_tax}"
+        - "&7Time Until Tax: &f{time_until_tax}"
+        - ""
+        - "&c&lTax Status:"
+        - "&7Unpaid Days: &f{unpaid_days}/{max_unpaid_days}"
+      custom-model-data: 0
+      glowing: true
+
+    tax-history-button:
+      slot: 31
+      material: WRITABLE_BOOK
+      name: "&6&lTax History"
+      lore:
+        - "&7View past tax payments"
+        - "&7and collection history"
+        - ""
+        - "&eClick to view"
+      custom-model-data: 0
+      glowing: false
+
+    custom-items:
+      example:
+        slot: 40
+        material: DIAMOND
+        name: "&b&lCustom Button"
+        lore:
+          - "&7This is a custom button"
+          - "&7that executes commands"
+        custom-model-data: 0
+        glowing: false
+        commands:
+          - "say Nation {nation} clicked custom button!"
+          - "tell {player} You clicked the custom button!"
+
+  # =================================
+  # MANAGE CITIES MENU
+  # =================================
+  manage-cities:
+    title: "&6&lManage Cities: &e{nation} &7(Page {page})"
+    size: 54
+
+    # Slots where cities will be displayed (0-44 = 45 slots)
+    city-slots:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+      - 21
+      - 22
+      - 23
+      - 24
+      - 25
+      - 26
+      - 27
+      - 28
+      - 29
+      - 30
+      - 31
+      - 32
+      - 33
+      - 34
+      - 35
+      - 36
+      - 37
+      - 38
+      - 39
+      - 40
+      - 41
+      - 42
+      - 43
+      - 44
+
+    invite-city-button:
+      material: LIME_DYE
+      name: "&a&l+ Invite City"
+      lore:
+        - "&7Click to invite a new"
+        - "&7city to your nation"
+      custom-model-data: 0
+      glowing: false
+
+    city-info-button:
+      material: PLAYER_HEAD
+      name: "&e{city_name}"
+      lore:
+        - "&7Members: &f{members}"
+        - "&7Claims: &f{claims}"
+        - "&7Daily Cost: &f${daily_cost}"
+      custom-model-data: 0
+      glowing: false
+
+    exclude-city-button:
+      material: RED_DYE
+      name: "&c&lExclude City"
+      lore:
+        - "&7Remove this city from"
+        - "&7your nation"
+      custom-model-data: 0
+      glowing: false
+
+    custom-items: {}
+
+  # =================================
+  # MANAGE PACTS MENU
+  # =================================
+  manage-pacts:
+    title: "&6&lManage Pacts: &e{nation} &7(Page {page})"
+    size: 54
+
+    # Slots where pacts will be displayed (0-44 = 45 slots)
+    pact-slots:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+      - 21
+      - 22
+      - 23
+      - 24
+      - 25
+      - 26
+      - 27
+      - 28
+      - 29
+      - 30
+      - 31
+      - 32
+      - 33
+      - 34
+      - 35
+      - 36
+      - 37
+      - 38
+      - 39
+      - 40
+      - 41
+      - 42
+      - 43
+      - 44
+
+    create-pact-button:
+      material: LIME_DYE
+      name: "&a&l+ Create Pact"
+      lore:
+        - "&7Click to propose a"
+        - "&7diplomatic pact"
+      custom-model-data: 0
+      glowing: false
+
+    pact-info-button:
+      material: PLAYER_HEAD
+      name: "&b{nation_name}"
+      lore:
+        - "&7Members: &f{members}"
+        - "&7Claims: &f{claims}"
+        - "&7Time Remaining: &f{time_remaining}"
+      custom-model-data: 0
+      glowing: false
+
+    break-pact-button:
+      material: RED_DYE
+      name: "&c&lBreak Pact"
+      lore:
+        - "&7End the diplomatic"
+        - "&7pact with this nation"
+      custom-model-data: 0
+      glowing: false
+
+    custom-items: {}
+
+  # =================================
+  # CONFIRMATION MENU
+  # =================================
+  confirmation:
+    title: "&c&lConfirm Action"
+
+    confirm-button:
+      slot: 11
+      material: LIME_WOOL
+      name: "&a&lCONFIRM"
+      lore:
+        - "&7Click to confirm this action"
+        - ""
+        - "&eAction: &f{action}"
+      custom-model-data: 0
+      glowing: true
+
+    cancel-button:
+      slot: 15
+      material: RED_WOOL
+      name: "&c&lCANCEL"
+      lore:
+        - "&7Click to cancel this action"
+      custom-model-data: 0
+      glowing: false
+
+    info-display:
+      slot: 13
+      material: PLAYER_HEAD
+      name: "&e&lInformation"
+      lore:
+        - "&7Details will appear here"
+      custom-model-data: 0
+      glowing: false
+
+  # =================================
+  # TAX HISTORY MENU
+  # =================================
+  tax-history:
+    title: "&6&lTax History: &e{nation} &7(Page {page})"
+    size: 54
+
+    tax-entry:
+      material: LIME_DYE # Changes to RED_DYE if failed
+      name: "&a✓ Paid &7- &f{date}"
+      lore:
+        - "&7Amount: &f${amount}"
+        - "&7Chunks: &f{chunks}"
+        - ""
+        - "&aTax successfully collected"
+      custom-model-data: 0
+      glowing: false
+
+    previous-page:
+      slot: 45
+      material: ARROW
+      name: "&e← Previous Page"
+      lore: []
+      custom-model-data: 0
+      glowing: false
+
+    next-page:
+      slot: 53
+      material: ARROW
+      name: "&eNext Page →"
+      lore: []
+      custom-model-data: 0
+      glowing: false
+
+  # =================================
+  # NAVIGATION BUTTONS
+  # =================================
+  navigation:
+    previous-page:
+      slot: 45
+      material: ARROW
+      name: "&e← Previous Page"
+      lore: []
+      custom-model-data: 0
+      glowing: false
+
+    next-page:
+      slot: 53
+      material: ARROW
+      name: "&eNext Page →"
+      lore: []
+      custom-model-data: 0
+      glowing: false
+
+    back-button:
+      slot: 49
+      material: BARRIER
+      name: "&cBack"
+      lore:
+        - "&7Return to previous menu"
+      custom-model-data: 0
+      glowing: false
