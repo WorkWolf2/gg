@@ -48,7 +48,6 @@ public class ManageCitiesMenu {
 
         boolean isChief = nation.getChief().equals(player.getUniqueId());
 
-        // Display cities
         for (int i = startIndex; i < endIndex; i++) {
             CityRef city = cities.get(i);
             int slotIndex = i - startIndex;
@@ -59,12 +58,10 @@ public class ManageCitiesMenu {
             }
         }
 
-        // Invite city button (next available slot)
         if (isChief && endIndex < slots.size()) {
             inv.setItem(slots.get(endIndex - startIndex), createInviteButton(config));
         }
 
-        // Navigation buttons
         if (page > 0 && config.getPreviousPageButtonGeneral() != null) {
             inv.setItem(config.getPreviousPageButtonGeneral().getSlot(),
                     createNavigationItem(config.getPreviousPageButtonGeneral(), "Previous Page"));
@@ -75,7 +72,6 @@ public class ManageCitiesMenu {
                     createNavigationItem(config.getNextPageButtonGeneral(), "Next Page"));
         }
 
-        // Custom items
         for (MenuConfig.CustomMenuItem customItem : config.getManageCitiesCustomItems()) {
             inv.setItem(customItem.getSlot(), createCustomItem(customItem, nation, player));
         }
@@ -91,7 +87,6 @@ public class ManageCitiesMenu {
         SkullMeta meta = (SkullMeta) item.getItemMeta();
 
         if (meta != null) {
-            // Get mayor's head
             meta.setOwningPlayer(plugin.getServer().getOfflinePlayer(team.getOwner()));
             meta.setDisplayName(color("&e" + city.teamName()));
 
@@ -205,7 +200,6 @@ public class ManageCitiesMenu {
         MenuConfig config = menuManager.getMenuConfig();
         List<Integer> slots = config.getCitySlots();
 
-        // Navigation
         if (config.getPreviousPageButtonGeneral() != null &&
                 slot == config.getPreviousPageButtonGeneral().getSlot() &&
                 activeMenu.getPage() > 0) {
@@ -221,7 +215,6 @@ public class ManageCitiesMenu {
             return;
         }
 
-        // Check if clicked on city slot
         int slotIndex = slots.indexOf(slot);
         if (slotIndex == -1) return;
 
@@ -230,7 +223,6 @@ public class ManageCitiesMenu {
 
         boolean isChief = nation.getChief().equals(player.getUniqueId());
 
-        // Invite button
         if (cityIndex >= cities.size()) {
             if (isChief) {
                 player.closeInventory();
@@ -239,10 +231,8 @@ public class ManageCitiesMenu {
             return;
         }
 
-        // Clicked on city
         CityRef city = cities.get(cityIndex);
 
-        // Open city action menu
         openCityActionMenu(player, nation, city, isChief);
     }
 
@@ -255,7 +245,6 @@ public class ManageCitiesMenu {
             return;
         }
 
-        // View Members button
         ItemStack viewMembers = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta viewMeta = viewMembers.getItemMeta();
         if (viewMeta != null) {
@@ -269,7 +258,6 @@ public class ManageCitiesMenu {
         }
         inv.setItem(11, viewMembers);
 
-        // Exclude button (only for non-capital cities and chief)
         boolean isCapital = nation.getCapital().equals(city);
         if (isChief && !isCapital) {
             ItemStack exclude = new ItemStack(Material.RED_WOOL);
@@ -311,12 +299,10 @@ public class ManageCitiesMenu {
 
         switch (slot) {
             case 11 -> {
-                // View Members
                 player.closeInventory();
                 menuManager.openViewMembersMenu(player, nation, city, 0);
             }
             case 15 -> {
-                // Exclude City
                 if (isChief && !city.equals(nation.getCapital())) {
                     player.closeInventory();
                     menuManager.openConfirmationMenu(player, "EXCLUDE_CITY", () -> {
@@ -325,7 +311,6 @@ public class ManageCitiesMenu {
                 }
             }
             case 22 -> {
-                // Back
                 player.closeInventory();
                 menuManager.openManageCitiesMenu(player, 0);
             }
@@ -338,7 +323,6 @@ public class ManageCitiesMenu {
         if (success) {
             player.sendMessage(color("&aCity &e" + city.teamName() + " &ahas been excluded from the nation!"));
 
-            // Notify city owner
             Team team = TeamAPI.getTeamByName(city.teamName());
             if (team != null) {
                 Player mayor = plugin.getServer().getPlayer(team.getOwner());

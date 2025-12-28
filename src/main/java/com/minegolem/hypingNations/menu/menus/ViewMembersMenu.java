@@ -3,6 +3,7 @@ package com.minegolem.hypingNations.menu.menus;
 import com.minegolem.hypingNations.HypingNations;
 import com.minegolem.hypingNations.data.CityRef;
 import com.minegolem.hypingNations.data.Nation;
+import com.minegolem.hypingNations.menu.config.MenuConfig;
 import com.minegolem.hypingNations.role.NationRole;
 import com.minegolem.hypingNations.menu.MenuManager;
 import dev.canable.hypingteams.api.TeamAPI;
@@ -10,8 +11,10 @@ import dev.canable.hypingteams.object.Team;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -37,52 +40,61 @@ public class ViewMembersMenu {
             return Bukkit.createInventory(null, 27, color("&cCity not found"));
         }
 
-        String title = color("&6Members: &e" + city.teamName() + " &7(Page " + (page + 1) + ")");
-        Inventory inv = Bukkit.createInventory(null, 54, title);
+        MenuConfig config = menuManager.getMenuConfig();
+        String title = color(config.getViewMembersTitle()
+                .replace("{city}", city.teamName())
+                .replace("{page}", String.valueOf(page + 1)));
+
+        Inventory inv = Bukkit.createInventory(null, config.getViewMembersSize(), title);
 
         Set<UUID> members = team.getMembers();
         List<UUID> memberList = new ArrayList<>(members);
 
-        // Always put chief first
         UUID chief = team.getOwner();
         if (memberList.contains(chief)) {
             memberList.remove(chief);
             memberList.add(0, chief);
         }
 
-        int itemsPerPage = 45; // Slots 0-44
-        int startIndex = page * itemsPerPage;
-        int endIndex = Math.min(startIndex + itemsPerPage, memberList.size());
+        List<Integer> slots = config.getMemberSlots();
+        int startIndex = page * slots.size();
+        int endIndex = Math.min(startIndex + slots.size(), memberList.size());
 
         boolean canManageRoles = plugin.getNationMemberManager()
                 .hasPermission(nation.getId(), player.getUniqueId(), "can_manage_roles");
 
-        // Display members
         for (int i = startIndex; i < endIndex; i++) {
             UUID memberId = memberList.get(i);
-            int slot = i - startIndex;
+            int slotIndex = i - startIndex;
 
-            ItemStack memberItem = createMemberItem(nation, memberId, chief, canManageRoles);
-            inv.setItem(slot, memberItem);
+            if (slotIndex < slots.size()) {
+                ItemStack memberItem = createMemberItem(config, nation, memberId, chief, canManageRoles);
+                inv.setItem(slots.get(slotIndex), memberItem);
+            }
         }
 
-        // Navigation
-        if (page > 0) {
-            inv.setItem(45, createNavigationItem(Material.ARROW, "&e← Previous Page"));
+        if (page > 0 && config.getPreviousPageButtonGeneral() != null) {
+            inv.setItem(config.getPreviousPageButtonGeneral().getSlot(),
+                    createNavigationItem(config.getPreviousPageButtonGeneral(), "Previous Page"));
         }
 
-        if (endIndex < memberList.size()) {
-            inv.setItem(53, createNavigationItem(Material.ARROW, "&eNext Page →"));
+        if (endIndex < memberList.size() && config.getNextPageButtonGeneral() != null) {
+            inv.setItem(config.getNextPageButtonGeneral().getSlot(),
+                    createNavigationItem(config.getNextPageButtonGeneral(), "Next Page"));
         }
 
         // Back button
-        inv.setItem(49, createNavigationItem(Material.BARRIER, "&cBack to Cities"));
+        if (config.getBackButton() != null) {
+            inv.setItem(config.getBackButton().getSlot(),
+                    createNavigationItem(config.getBackButton(), "Back to Cities"));
+        }
 
         return inv;
     }
 
-    private ItemStack createMemberItem(Nation nation, UUID memberId, UUID chief, boolean canManageRoles) {
+    private ItemStack createMemberItem(MenuConfig config, Nation nation, UUID memberId, UUID chief, boolean canManageRoles) {
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(memberId);
+        MenuConfig.MenuItem memberButton = config.getMemberButton();
 
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) item.getItemMeta();
@@ -93,7 +105,6 @@ public class ViewMembersMenu {
             String name = offlinePlayer.getName();
             if (name == null) name = "Unknown";
 
-            // Chief gets special formatting
             if (memberId.equals(chief)) {
                 meta.setDisplayName(color("&6" + name + " - Chief"));
             } else if (memberId.equals(nation.getChief())) {
@@ -113,15 +124,37 @@ public class ViewMembersMenu {
             }
 
             meta.setLore(lore);
+
+            if (memberButton != null && memberButton.isGlowing()) {
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
+
             item.setItemMeta(meta);
         }
 
         return item;
     }
 
-    private ItemStack createNavigationItem(Material material, String name) {
-        ItemStack item = new ItemStack(material);
-        item.getItemMeta().setDisplayName(color(name));
+    private ItemStack createNavigationItem(MenuConfig.MenuItem menuItem, String defaultName) {
+        ItemStack item = new ItemStack(menuItem.getMaterial());
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(color(menuItem.getName().isEmpty() ? defaultName : menuItem.getName()));
+
+            if (menuItem.getCustomModelData() > 0) {
+                meta.setCustomModelData(menuItem.getCustomModelData());
+            }
+
+            if (menuItem.isGlowing()) {
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
+
+            item.setItemMeta(meta);
+        }
+
         return item;
     }
 
@@ -129,8 +162,11 @@ public class ViewMembersMenu {
         Team team = TeamAPI.getTeamByName(city.teamName());
         if (team == null) return;
 
-        // Navigation
-        if (slot == 45 && activeMenu.getPage() > 0) {
+        MenuConfig config = menuManager.getMenuConfig();
+
+        if (config.getPreviousPageButtonGeneral() != null &&
+                slot == config.getPreviousPageButtonGeneral().getSlot() &&
+                activeMenu.getPage() > 0) {
             player.closeInventory();
             Inventory inv = create(player, nation, city, activeMenu.getPage() - 1);
             player.openInventory(inv);
@@ -138,7 +174,8 @@ public class ViewMembersMenu {
             return;
         }
 
-        if (slot == 53) {
+        if (config.getNextPageButtonGeneral() != null &&
+                slot == config.getNextPageButtonGeneral().getSlot()) {
             player.closeInventory();
             Inventory inv = create(player, nation, city, activeMenu.getPage() + 1);
             player.openInventory(inv);
@@ -146,70 +183,90 @@ public class ViewMembersMenu {
             return;
         }
 
-        // Back button
-        if (slot == 49) {
+        if (config.getBackButton() != null && slot == config.getBackButton().getSlot()) {
             player.closeInventory();
             menuManager.openManageCitiesMenu(player, 0);
             return;
         }
 
-        // Member slot clicked
-        if (slot >= 0 && slot < 45) {
-            Set<UUID> members = team.getMembers();
-            List<UUID> memberList = new ArrayList<>(members);
+        List<Integer> slots = config.getMemberSlots();
+        int slotIndex = slots.indexOf(slot);
+        if (slotIndex == -1) return;
 
-            // Always put chief first
-            UUID chief = team.getOwner();
-            if (memberList.contains(chief)) {
-                memberList.remove(chief);
-                memberList.add(0, chief);
-            }
+        Set<UUID> members = team.getMembers();
+        List<UUID> memberList = new ArrayList<>(members);
 
-            int memberIndex = activeMenu.getPage() * 45 + slot;
-            if (memberIndex < memberList.size()) {
-                UUID memberId = memberList.get(memberIndex);
+        UUID chief = team.getOwner();
+        if (memberList.contains(chief)) {
+            memberList.remove(chief);
+            memberList.add(0, chief);
+        }
 
-                boolean canManageRoles = plugin.getNationMemberManager()
-                        .hasPermission(nation.getId(), player.getUniqueId(), "can_manage_roles");
+        int memberIndex = activeMenu.getPage() * slots.size() + slotIndex;
+        if (memberIndex < memberList.size()) {
+            UUID memberId = memberList.get(memberIndex);
 
-                // Can't change chief or city owner role
-                if (canManageRoles && !memberId.equals(nation.getChief()) && !memberId.equals(chief)) {
-                    openRoleSelectionMenu(player, nation, memberId, city);
-                }
+            boolean canManageRoles = plugin.getNationMemberManager()
+                    .hasPermission(nation.getId(), player.getUniqueId(), "can_manage_roles");
+
+            if (canManageRoles && !memberId.equals(nation.getChief()) && !memberId.equals(chief)) {
+                openRoleSelectionMenu(player, nation, memberId, city);
             }
         }
     }
 
     private void openRoleSelectionMenu(Player player, Nation nation, UUID targetId, CityRef city) {
-        Inventory inv = Bukkit.createInventory(null, 27, color("&6Select Role"));
+        MenuConfig config = menuManager.getMenuConfig();
+        String title = color(config.getRoleSelectionTitle());
+
+        Inventory inv = Bukkit.createInventory(null, config.getRoleSelectionSize(), title);
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetId);
         String targetName = target.getName() != null ? target.getName() : "Unknown";
 
-        // Info item
-        ItemStack info = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta infoMeta = (SkullMeta) info.getItemMeta();
-        if (infoMeta != null) {
-            infoMeta.setOwningPlayer(target);
-            infoMeta.setDisplayName(color("&e" + targetName));
-            infoMeta.setLore(List.of(color("&7Select a role below")));
-            info.setItemMeta(infoMeta);
+        if (config.getRoleSelectionInfoButton() != null) {
+            ItemStack info = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta infoMeta = (SkullMeta) info.getItemMeta();
+            if (infoMeta != null) {
+                infoMeta.setOwningPlayer(target);
+                infoMeta.setDisplayName(color(config.getRoleSelectionInfoButton().getName()
+                        .replace("{player}", targetName)));
+
+                List<String> lore = new ArrayList<>();
+                for (String line : config.getRoleSelectionInfoButton().getLore()) {
+                    lore.add(color(line.replace("{player}", targetName)));
+                }
+                infoMeta.setLore(lore);
+                info.setItemMeta(infoMeta);
+            }
+            inv.setItem(config.getRoleSelectionInfoButton().getSlot(), info);
         }
-        inv.setItem(4, info);
 
-        // Role options
-        inv.setItem(11, createRoleItem(NationRole.MAYOR));
-        inv.setItem(13, createRoleItem(NationRole.DEPUTY_MAYOR));
-        inv.setItem(15, createRoleItem(NationRole.CITIZEN));
+        if (config.getRoleMayorButton() != null) {
+            inv.setItem(config.getRoleMayorButton().getSlot(),
+                    createRoleItem(config.getRoleMayorButton(), NationRole.MAYOR));
+        }
+        if (config.getRoleDeputyMayorButton() != null) {
+            inv.setItem(config.getRoleDeputyMayorButton().getSlot(),
+                    createRoleItem(config.getRoleDeputyMayorButton(), NationRole.DEPUTY_MAYOR));
+        }
+        if (config.getRoleCitizenButton() != null) {
+            inv.setItem(config.getRoleCitizenButton().getSlot(),
+                    createRoleItem(config.getRoleCitizenButton(), NationRole.CITIZEN));
+        }
 
-        // Cancel
-        ItemStack cancel = new ItemStack(Material.BARRIER);
-        cancel.getItemMeta().setDisplayName(color("&cCancel"));
-        inv.setItem(22, cancel);
+        if (config.getBackButton() != null) {
+            ItemStack cancel = new ItemStack(config.getBackButton().getMaterial());
+            ItemMeta cancelMeta = cancel.getItemMeta();
+            if (cancelMeta != null) {
+                cancelMeta.setDisplayName(color(config.getBackButton().getName()));
+                cancel.setItemMeta(cancelMeta);
+            }
+            inv.setItem(config.getBackButton().getSlot(), cancel);
+        }
 
         player.openInventory(inv);
 
-        // Store context
         MenuManager.ActiveMenu menu = new MenuManager.ActiveMenu(
                 MenuManager.MenuType.ROLE_SELECTION, nation.getId(), 0
         );
@@ -217,34 +274,30 @@ public class ViewMembersMenu {
         menuManager.getActiveMenus().put(player.getUniqueId(), menu);
     }
 
-    private ItemStack createRoleItem(NationRole role) {
-        Material material = switch (role) {
-            case MAYOR -> Material.DIAMOND;
-            case DEPUTY_MAYOR -> Material.GOLD_INGOT;
-            case CITIZEN -> Material.IRON_INGOT;
-            default -> Material.STONE;
-        };
-
-        ItemStack item = new ItemStack(material);
+    private ItemStack createRoleItem(MenuConfig.MenuItem menuItem, NationRole role) {
+        ItemStack item = new ItemStack(menuItem.getMaterial());
         ItemMeta meta = item.getItemMeta();
+
         if (meta != null) {
-            meta.setDisplayName(color("&e" + role.getDisplayName()));
+            meta.setDisplayName(color(menuItem.getName().replace("{role}", role.getDisplayName())));
 
             List<String> lore = new ArrayList<>();
-            lore.add("");
-            lore.add(color("&7Permissions:"));
-            if (role.isCanInviteCities()) lore.add(color("&a✓ &7Invite Cities"));
-            if (role.isCanCreatePacts()) lore.add(color("&a✓ &7Create Pacts"));
-            if (role.isCanManageCities()) lore.add(color("&a✓ &7Manage Cities"));
-
-            if (!role.isCanInviteCities() && !role.isCanCreatePacts() && !role.isCanManageCities()) {
-                lore.add(color("&7No special permissions"));
+            for (String line : menuItem.getLore()) {
+                String processedLine = line.replace("{role}", role.getDisplayName());
+                lore.add(color(processedLine));
             }
 
-            lore.add("");
-            lore.add(color("&eClick to assign"));
-
             meta.setLore(lore);
+
+            if (menuItem.getCustomModelData() > 0) {
+                meta.setCustomModelData(menuItem.getCustomModelData());
+            }
+
+            if (menuItem.isGlowing()) {
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
+
             item.setItemMeta(meta);
         }
 
@@ -252,18 +305,20 @@ public class ViewMembersMenu {
     }
 
     public void handleRoleSelection(Player player, int slot, Nation nation, RoleSelectionData data) {
+        MenuConfig config = menuManager.getMenuConfig();
         NationRole selectedRole = null;
 
-        switch (slot) {
-            case 11 -> selectedRole = NationRole.MAYOR;
-            case 13 -> selectedRole = NationRole.DEPUTY_MAYOR;
-            case 15 -> selectedRole = NationRole.CITIZEN;
-            case 22 -> {
-                player.closeInventory();
-                Inventory inv = create(player, nation, data.city, 0);
-                player.openInventory(inv);
-                return;
-            }
+        if (config.getRoleMayorButton() != null && slot == config.getRoleMayorButton().getSlot()) {
+            selectedRole = NationRole.MAYOR;
+        } else if (config.getRoleDeputyMayorButton() != null && slot == config.getRoleDeputyMayorButton().getSlot()) {
+            selectedRole = NationRole.DEPUTY_MAYOR;
+        } else if (config.getRoleCitizenButton() != null && slot == config.getRoleCitizenButton().getSlot()) {
+            selectedRole = NationRole.CITIZEN;
+        } else if (config.getBackButton() != null && slot == config.getBackButton().getSlot()) {
+            player.closeInventory();
+            Inventory inv = create(player, nation, data.city, 0);
+            player.openInventory(inv);
+            return;
         }
 
         if (selectedRole != null) {

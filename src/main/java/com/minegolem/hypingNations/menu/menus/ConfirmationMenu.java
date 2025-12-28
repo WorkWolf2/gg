@@ -37,19 +37,16 @@ public class ConfirmationMenu {
 
         Inventory inv = Bukkit.createInventory(null, 27, title);
 
-        // Confirm button (slot 11)
         if (config.getConfirmButton() != null) {
             ItemStack confirmItem = createConfirmItem(config.getConfirmButton(), actionType);
             inv.setItem(config.getConfirmButton().getSlot(), confirmItem);
         }
 
-        // Cancel button (slot 15)
         if (config.getCancelButton() != null) {
             ItemStack cancelItem = createCancelItem(config.getCancelButton());
             inv.setItem(config.getCancelButton().getSlot(), cancelItem);
         }
 
-        // Info display (slot 13)
         if (config.getInfoDisplayButton() != null) {
             ItemStack infoItem = createInfoItem(config.getInfoDisplayButton(), actionType, nation, data);
             inv.setItem(config.getInfoDisplayButton().getSlot(), infoItem);
@@ -203,7 +200,6 @@ public class ConfirmationMenu {
     public void handleClick(Player player, int slot, MenuManager.ActiveMenu activeMenu) {
         MenuConfig config = menuManager.getMenuConfig();
 
-        // Confirm button
         if (config.getConfirmButton() != null && slot == config.getConfirmButton().getSlot()) {
             player.closeInventory();
             if (activeMenu.getConfirmAction() != null) {
@@ -212,7 +208,6 @@ public class ConfirmationMenu {
             return;
         }
 
-        // Cancel button
         if (config.getCancelButton() != null && slot == config.getCancelButton().getSlot()) {
             player.closeInventory();
             player.sendMessage(color("&7Action cancelled."));

@@ -464,19 +464,7 @@ menus:
       custom-model-data: 0
       glowing: false
 
-    custom-items:
-      example:
-        slot: 40
-        material: DIAMOND
-        name: "&b&lCustom Button"
-        lore:
-          - "&7This is a custom button"
-          - "&7that executes commands"
-        custom-model-data: 0
-        glowing: false
-        commands:
-          - "say Nation {nation} clicked custom button!"
-          - "tell {player} You clicked the custom button!"
+    custom-items: {}
 
   # =================================
   # MANAGE CITIES MENU
@@ -485,53 +473,7 @@ menus:
     title: "&6&lManage Cities: &e{nation} &7(Page {page})"
     size: 54
 
-    # Slots where cities will be displayed (0-44 = 45 slots)
-    city-slots:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
-      - 11
-      - 12
-      - 13
-      - 14
-      - 15
-      - 16
-      - 17
-      - 18
-      - 19
-      - 20
-      - 21
-      - 22
-      - 23
-      - 24
-      - 25
-      - 26
-      - 27
-      - 28
-      - 29
-      - 30
-      - 31
-      - 32
-      - 33
-      - 34
-      - 35
-      - 36
-      - 37
-      - 38
-      - 39
-      - 40
-      - 41
-      - 42
-      - 43
-      - 44
+    city-slots: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44]
 
     invite-city-button:
       material: LIME_DYE
@@ -570,53 +512,7 @@ menus:
     title: "&6&lManage Pacts: &e{nation} &7(Page {page})"
     size: 54
 
-    # Slots where pacts will be displayed (0-44 = 45 slots)
-    pact-slots:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
-      - 11
-      - 12
-      - 13
-      - 14
-      - 15
-      - 16
-      - 17
-      - 18
-      - 19
-      - 20
-      - 21
-      - 22
-      - 23
-      - 24
-      - 25
-      - 26
-      - 27
-      - 28
-      - 29
-      - 30
-      - 31
-      - 32
-      - 33
-      - 34
-      - 35
-      - 36
-      - 37
-      - 38
-      - 39
-      - 40
-      - 41
-      - 42
-      - 43
-      - 44
+    pact-slots: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44]
 
     create-pact-button:
       material: LIME_DYE
@@ -691,7 +587,7 @@ menus:
     size: 54
 
     tax-entry:
-      material: LIME_DYE # Changes to RED_DYE if failed
+      material: LIME_DYE
       name: "&a✓ Paid &7- &f{date}"
       lore:
         - "&7Amount: &f${amount}"
@@ -714,6 +610,83 @@ menus:
       material: ARROW
       name: "&eNext Page →"
       lore: []
+      custom-model-data: 0
+      glowing: false
+
+  # =================================
+  # VIEW MEMBERS MENU
+  # =================================
+  view-members:
+    title: "&6&lView Members: &e{city} &7(Page {page})"
+    size: 54
+
+    # Slots where members will be displayed (0-44 = 45 slots)
+    member-slots: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44]
+
+    member-button:
+      material: PLAYER_HEAD
+      name: "&e{player}"
+      lore:
+        - "&7Role: &f{role}"
+        - ""
+        - "&eClick to manage role"
+      custom-model-data: 0
+      glowing: false
+
+  # =================================
+  # ROLE SELECTION MENU
+  # =================================
+  role-selection:
+    title: "&6&lSelect Role"
+    size: 27
+
+    info-button:
+      slot: 4
+      material: PLAYER_HEAD
+      name: "&e{player}"
+      lore:
+        - "&7Select a role below"
+      custom-model-data: 0
+      glowing: false
+
+    role-mayor:
+      slot: 11
+      material: DIAMOND
+      name: "&e&lMayor"
+      lore:
+        - ""
+        - "&7Permissions:"
+        - "&a✓ &7Invite Cities"
+        - "&a✓ &7Create Pacts"
+        - "&a✓ &7Manage Cities"
+        - ""
+        - "&eClick to assign"
+      custom-model-data: 0
+      glowing: false
+
+    role-deputy-mayor:
+      slot: 13
+      material: GOLD_INGOT
+      name: "&e&lDeputy Mayor"
+      lore:
+        - ""
+        - "&7Permissions:"
+        - "&a✓ &7Invite Cities"
+        - "&a✓ &7Create Pacts"
+        - ""
+        - "&eClick to assign"
+      custom-model-data: 0
+      glowing: false
+
+    role-citizen:
+      slot: 15
+      material: IRON_INGOT
+      name: "&e&lCitizen"
+      lore:
+        - ""
+        - "&7No special permissions"
+        - ""
+        - "&eClick to assign"
       custom-model-data: 0
       glowing: false
 

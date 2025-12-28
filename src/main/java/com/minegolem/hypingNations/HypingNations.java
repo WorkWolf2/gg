@@ -56,7 +56,6 @@ public final class HypingNations extends JavaPlugin {
         startTasks();
         registerCommands();
 
-        // Initialize menu manager
         menuManager = new MenuManager(this);
 
         getLogger().info("HypingNations enabled!");
@@ -118,7 +117,6 @@ public final class HypingNations extends JavaPlugin {
         try {
             nationManager.loadNations();
 
-            // Load tax histories and roles for all nations
             for (var nation : nationManager.getAllNations()) {
                 taxHistoryManager.loadHistory(nation.getId());
                 nationMemberManager.loadRoles(nation.getId());
@@ -142,12 +140,10 @@ public final class HypingNations extends JavaPlugin {
     }
 
     private void startTasks() {
-        // Daily tax task
         NationTaxTask taxTask = new NationTaxTask(foliaLib, nationManager, taxManager,
                 taxHistoryManager, getLogger());
         taxTask.startDaily();
 
-        // Invitation cleanup task (every 5 minutes)
         InvitationCleanupTask cleanupTask = new InvitationCleanupTask(invitationManager);
         foliaLib.getScheduler().runTimerAsync(
                 cleanupTask,
@@ -155,7 +151,6 @@ public final class HypingNations extends JavaPlugin {
                 20L * 60 * 5
         );
 
-        // Pact cleanup task (every hour)
         PactCleanupTask pactCleanupTask = new PactCleanupTask(pactManager);
         foliaLib.getScheduler().runTimerAsync(
                 pactCleanupTask,
@@ -163,7 +158,6 @@ public final class HypingNations extends JavaPlugin {
                 20L * 60 * 60
         );
 
-        // Automatic tax checker (every 5 minutes)
         AutomaticTaxCheckerTask taxCheckerTask = new AutomaticTaxCheckerTask(this);
         foliaLib.getScheduler().runTimerAsync(
                 taxCheckerTask,
@@ -171,14 +165,12 @@ public final class HypingNations extends JavaPlugin {
                 20L * 60 * 5
         );
 
-        // Auto-save task (every 10 minutes)
         foliaLib.getScheduler().runTimerAsync(
                 this::saveData,
                 20L * 60 * 10,
                 20L * 60 * 10
         );
 
-        // Backup task
         if (getConfig().getBoolean("database.backup.enabled", true)) {
             int intervalHours = getConfig().getInt("database.backup.interval-hours", 6);
             BackupTask backupTask = new BackupTask(this);
@@ -196,7 +188,6 @@ public final class HypingNations extends JavaPlugin {
     }
 
     private void registerCommands() {
-        // Main command
         HNationsCommand command = new HNationsCommand(this);
         Objects.requireNonNull(getCommand("hnations")).setExecutor(command);
         Objects.requireNonNull(getCommand("hnations")).setTabCompleter(command);

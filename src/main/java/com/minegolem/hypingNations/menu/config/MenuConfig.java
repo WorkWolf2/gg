@@ -50,6 +50,20 @@ public class MenuConfig {
     private MenuItem previousPageButton;
     private MenuItem nextPageButton;
 
+    // View Members Menu
+    private String viewMembersTitle;
+    private int viewMembersSize;
+    private List<Integer> memberSlots;
+    private MenuItem memberButton;
+
+    // Role Selection Menu
+    private String roleSelectionTitle;
+    private int roleSelectionSize;
+    private MenuItem roleSelectionInfoButton;
+    private MenuItem roleMayorButton;
+    private MenuItem roleDeputyMayorButton;
+    private MenuItem roleCitizenButton;
+
     // Navigation
     private MenuItem previousPageButtonGeneral;
     private MenuItem nextPageButtonGeneral;
@@ -61,6 +75,8 @@ public class MenuConfig {
         loadManagePactsMenu(section.getConfigurationSection("manage-pacts"));
         loadConfirmationMenu(section.getConfigurationSection("confirmation"));
         loadTaxHistoryMenu(section.getConfigurationSection("tax-history"));
+        loadViewMembersMenu(section.getConfigurationSection("view-members"));
+        loadRoleSelectionMenu(section.getConfigurationSection("role-selection"));
         loadNavigation(section.getConfigurationSection("navigation"));
     }
 
@@ -86,7 +102,6 @@ public class MenuConfig {
 
         citySlots = section.getIntegerList("city-slots");
         if (citySlots.isEmpty()) {
-            // Default slots 0-44
             for (int i = 0; i < 45; i++) {
                 citySlots.add(i);
             }
@@ -136,6 +151,58 @@ public class MenuConfig {
         taxEntryButton = loadMenuItem(section.getConfigurationSection("tax-entry"));
         previousPageButton = loadMenuItem(section.getConfigurationSection("previous-page"));
         nextPageButton = loadMenuItem(section.getConfigurationSection("next-page"));
+    }
+
+    private void loadViewMembersMenu(ConfigurationSection section) {
+        if (section == null) {
+            // Default values
+            viewMembersTitle = "&6&lView Members: &e{city} &7(Page {page})";
+            viewMembersSize = 54;
+            memberSlots = new ArrayList<>();
+            for (int i = 0; i < 45; i++) {
+                memberSlots.add(i);
+            }
+            memberButton = new MenuItem(0, Material.PLAYER_HEAD, "&e{player}",
+                    List.of("&7Role: &f{role}", "", "&eClick to manage"), 0, false);
+            return;
+        }
+
+        viewMembersTitle = section.getString("title", "&6&lView Members: &e{city} &7(Page {page})");
+        viewMembersSize = section.getInt("size", 54);
+
+        memberSlots = section.getIntegerList("member-slots");
+        if (memberSlots.isEmpty()) {
+            for (int i = 0; i < 45; i++) {
+                memberSlots.add(i);
+            }
+        }
+
+        memberButton = loadMenuItem(section.getConfigurationSection("member-button"));
+    }
+
+    private void loadRoleSelectionMenu(ConfigurationSection section) {
+        if (section == null) {
+            // Default values
+            roleSelectionTitle = "&6&lSelect Role";
+            roleSelectionSize = 27;
+            roleSelectionInfoButton = new MenuItem(4, Material.PLAYER_HEAD, "&e{player}",
+                    List.of("&7Select a role below"), 0, false);
+            roleMayorButton = new MenuItem(11, Material.DIAMOND, "&e&lMayor",
+                    List.of("", "&7Permissions:", "&a✓ &7Invite Cities", "", "&eClick to assign"), 0, false);
+            roleDeputyMayorButton = new MenuItem(13, Material.GOLD_INGOT, "&e&lDeputy Mayor",
+                    List.of("", "&7Permissions:", "&a✓ &7Invite Cities", "", "&eClick to assign"), 0, false);
+            roleCitizenButton = new MenuItem(15, Material.IRON_INGOT, "&e&lCitizen",
+                    List.of("", "&7No special permissions", "", "&eClick to assign"), 0, false);
+            return;
+        }
+
+        roleSelectionTitle = section.getString("title", "&6&lSelect Role");
+        roleSelectionSize = section.getInt("size", 27);
+
+        roleSelectionInfoButton = loadMenuItem(section.getConfigurationSection("info-button"));
+        roleMayorButton = loadMenuItem(section.getConfigurationSection("role-mayor"));
+        roleDeputyMayorButton = loadMenuItem(section.getConfigurationSection("role-deputy-mayor"));
+        roleCitizenButton = loadMenuItem(section.getConfigurationSection("role-citizen"));
     }
 
     private void loadNavigation(ConfigurationSection section) {

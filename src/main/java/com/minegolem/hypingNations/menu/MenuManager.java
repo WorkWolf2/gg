@@ -25,7 +25,6 @@ public class MenuManager implements Listener {
     @Getter
     private MenuConfig menuConfig;
 
-    // Active menu tracking
     @Getter
     private final Map<UUID, ActiveMenu> activeMenus = new ConcurrentHashMap<>();
 

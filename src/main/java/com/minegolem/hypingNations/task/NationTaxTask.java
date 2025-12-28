@@ -56,19 +56,15 @@ public class NationTaxTask implements Runnable {
         }
 
         if (capitalTeam.getBalance() >= taxAmount) {
-            // Successful payment
             capitalTeam.addBalance(-taxAmount);
             taxManager.recordPayment(nation);
 
-            // Record in tax history
             taxHistoryManager.recordTaxPayment(nation.getId(), taxAmount, chunks, true);
 
             logger.info("Nation " + nation.getName() + " paid tax of " + taxAmount);
         } else {
-            // Failed payment
             taxManager.recordMissedPayment(nation);
 
-            // Record in tax history
             taxHistoryManager.recordTaxPayment(nation.getId(), taxAmount, chunks, false);
 
             logger.warning("Nation " + nation.getName() + " missed tax payment. Unpaid days: " + nation.getUnpaidDays());
@@ -77,7 +73,6 @@ public class NationTaxTask implements Runnable {
                 logger.warning("Nation " + nation.getName() + " dissolved due to unpaid taxes.");
                 nationManager.deleteNation(nation.getName());
 
-                // Clear tax history for dissolved nation
                 taxHistoryManager.clearHistory(nation.getId());
             }
         }

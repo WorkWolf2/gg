@@ -40,11 +40,10 @@ public class TaxHistoryMenu {
         List<TaxHistory.TaxEntry> entries = plugin.getTaxHistoryManager()
                 .getTaxHistory(nation.getId());
 
-        int itemsPerPage = 45; // Slots 0-44
+        int itemsPerPage = 45;
         int startIndex = page * itemsPerPage;
         int endIndex = Math.min(startIndex + itemsPerPage, entries.size());
 
-        // Display tax entries
         for (int i = startIndex; i < endIndex; i++) {
             TaxHistory.TaxEntry entry = entries.get(i);
             int slot = i - startIndex;
@@ -53,7 +52,6 @@ public class TaxHistoryMenu {
             inv.setItem(slot, entryItem);
         }
 
-        // Navigation buttons
         if (page > 0 && config.getPreviousPageButton() != null) {
             inv.setItem(config.getPreviousPageButton().getSlot(),
                     createNavigationItem(config.getPreviousPageButton(), "Previous Page"));
@@ -115,7 +113,6 @@ public class TaxHistoryMenu {
     public void handleClick(Player player, int slot, Nation nation, MenuManager.ActiveMenu activeMenu) {
         MenuConfig config = menuManager.getMenuConfig();
 
-        // Navigation
         if (config.getPreviousPageButton() != null &&
                 slot == config.getPreviousPageButton().getSlot() &&
                 activeMenu.getPage() > 0) {

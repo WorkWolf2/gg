@@ -20,7 +20,6 @@ public class AutomaticTaxCheckerTask implements Runnable {
     @Override
     public void run() {
         for (Nation nation : plugin.getNationManager().getAllNations()) {
-            // Skip nations with no unpaid days
             if (nation.getUnpaidDays() == 0) {
                 continue;
             }
@@ -44,15 +43,11 @@ public class AutomaticTaxCheckerTask implements Runnable {
             return;
         }
 
-        // Check if capital now has sufficient funds
         if (capitalTeam.getBalance() >= taxAmount) {
-            // Deduct tax from capital
             capitalTeam.addBalance(-taxAmount);
 
-            // Reset unpaid days
             plugin.getTaxManager().recordPayment(nation);
 
-            // Record in tax history
             plugin.getTaxHistoryManager().recordTaxPayment(
                     nation.getId(),
                     taxAmount,
@@ -67,10 +62,8 @@ public class AutomaticTaxCheckerTask implements Runnable {
                     nation.getUnpaidDays()
             ));
 
-            // Save nation data
             plugin.getPersistenceService().saveNation(nation);
 
-            // Notify chief if online
             if (capitalTeam.getOwner() != null) {
                 var chief = plugin.getServer().getPlayer(capitalTeam.getOwner());
                 if (chief != null && chief.isOnline()) {

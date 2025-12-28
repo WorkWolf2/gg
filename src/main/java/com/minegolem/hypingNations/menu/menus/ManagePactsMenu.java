@@ -54,7 +54,6 @@ public class ManagePactsMenu {
                 player.getUniqueId(), nation, "can_break_pact"
         );
 
-        // Display pacts
         for (int i = startIndex; i < endIndex; i++) {
             PactManager.Pact pact = pacts.get(i);
             int slotIndex = i - startIndex;
@@ -65,12 +64,10 @@ public class ManagePactsMenu {
             }
         }
 
-        // Create pact button (next available slot)
         if (canManagePacts && endIndex < slots.size()) {
             inv.setItem(slots.get(endIndex - startIndex), createCreatePactButton(config));
         }
 
-        // Navigation buttons
         if (page > 0 && config.getPreviousPageButtonGeneral() != null) {
             inv.setItem(config.getPreviousPageButtonGeneral().getSlot(),
                     createNavigationItem(config.getPreviousPageButtonGeneral(), "Previous Page"));
@@ -81,7 +78,6 @@ public class ManagePactsMenu {
                     createNavigationItem(config.getNextPageButtonGeneral(), "Next Page"));
         }
 
-        // Custom items
         for (MenuConfig.CustomMenuItem customItem : config.getManagePactsCustomItems()) {
             inv.setItem(customItem.getSlot(), createCustomItem(customItem, nation, player));
         }
@@ -96,7 +92,6 @@ public class ManagePactsMenu {
         SkullMeta meta = (SkullMeta) item.getItemMeta();
 
         if (meta != null) {
-            // Set head to chief of target nation
             meta.setOwningPlayer(plugin.getServer().getOfflinePlayer(targetNation.getChief()));
             meta.setDisplayName(color("&b" + targetNation.getName()));
 
@@ -105,7 +100,6 @@ public class ManagePactsMenu {
             lore.add(color("&7Claims: &f" + targetNation.getTotalChunks()));
             lore.add("");
 
-            // Calculate remaining time
             LocalDate endDate = pact.getStartDate().plusDays(pact.getDurationDays());
             Duration remaining = Duration.between(LocalDate.now().atStartOfDay(), endDate.atStartOfDay());
 
@@ -222,7 +216,6 @@ public class ManagePactsMenu {
         MenuConfig config = menuManager.getMenuConfig();
         List<Integer> slots = config.getPactSlots();
 
-        // Navigation
         if (config.getPreviousPageButtonGeneral() != null &&
                 slot == config.getPreviousPageButtonGeneral().getSlot() &&
                 activeMenu.getPage() > 0) {
@@ -238,7 +231,6 @@ public class ManagePactsMenu {
             return;
         }
 
-        // Check if clicked on pact slot
         int slotIndex = slots.indexOf(slot);
         if (slotIndex == -1) return;
 
@@ -252,7 +244,6 @@ public class ManagePactsMenu {
                 player.getUniqueId(), nation, "can_break_pact"
         );
 
-        // Create pact button
         if (pactIndex >= pacts.size()) {
             if (canManagePacts) {
                 player.closeInventory();
@@ -261,11 +252,9 @@ public class ManagePactsMenu {
             return;
         }
 
-        // Clicked on pact
         PactManager.Pact pact = pacts.get(pactIndex);
 
         if (canManagePacts) {
-            // Break pact
             player.closeInventory();
             menuManager.openConfirmationMenu(player, "BREAK_PACT", () -> {
                 breakPact(player, nation, pact);
@@ -279,13 +268,11 @@ public class ManagePactsMenu {
         if (success) {
             player.sendMessage(color("&cPact with &e" + pact.getTarget().getName() + " &chas been broken!"));
 
-            // Notify other nation's chief
             Player targetChief = plugin.getServer().getPlayer(pact.getTarget().getChief());
             if (targetChief != null && targetChief.isOnline()) {
                 targetChief.sendMessage(color("&e" + nation.getName() + " &chas broken the pact with your nation!"));
             }
 
-            // Save changes
             plugin.getPersistenceService().saveNation(nation);
             plugin.getPersistenceService().saveNation(pact.getTarget());
         } else {

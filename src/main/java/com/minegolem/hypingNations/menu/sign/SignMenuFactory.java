@@ -71,7 +71,6 @@ public final class SignMenuFactory {
                                 return Collections.emptyList();
                             }
 
-                            // Re-open the sign with previous input
                             return List.of(
                                     SignGUIAction.displayNewLines(input)
                             );

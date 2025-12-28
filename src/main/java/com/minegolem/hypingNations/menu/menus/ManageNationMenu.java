@@ -39,33 +39,28 @@ public class ManageNationMenu {
 
         Inventory inv = Bukkit.createInventory(null, config.getManageNationSize(), title);
 
-        // Dissolve button
         if (config.getDissolveButton() != null &&
                 plugin.getPermissionManager().hasPermission(player.getUniqueId(), nation, "can_delete_nation")) {
             inv.setItem(config.getDissolveButton().getSlot(),
                     createItem(config.getDissolveButton(), nation, player));
         }
 
-        // Rename button
         if (config.getRenameButton() != null &&
                 nation.getChief().equals(player.getUniqueId())) {
             inv.setItem(config.getRenameButton().getSlot(),
                     createItem(config.getRenameButton(), nation, player));
         }
 
-        // Info button
         if (config.getInfoButton() != null) {
             inv.setItem(config.getInfoButton().getSlot(),
                     createInfoItem(config.getInfoButton(), nation));
         }
 
-        // Tax History button
         if (config.getTaxHistoryButton() != null) {
             inv.setItem(config.getTaxHistoryButton().getSlot(),
                     createItem(config.getTaxHistoryButton(), nation, player));
         }
 
-        // Custom items
         for (MenuConfig.CustomMenuItem customItem : config.getManageNationCustomItems()) {
             inv.setItem(customItem.getSlot(), createCustomItem(customItem, nation, player));
         }
@@ -113,7 +108,6 @@ public class ManageNationMenu {
     private String replacePlaceholders(String text, Nation nation) {
         double nextTax = plugin.getTaxManager().calculateTax(nation);
 
-        // Calculate time until next tax (midnight tomorrow)
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime nextTaxTime = now.plusDays(1).withHour(0).withMinute(0).withSecond(0);
         Duration duration = Duration.between(now, nextTaxTime);
@@ -141,7 +135,6 @@ public class ManageNationMenu {
     public void handleClick(Player player, int slot, Nation nation, MenuManager.ActiveMenu activeMenu) {
         MenuConfig config = menuManager.getMenuConfig();
 
-        // Dissolve button
         if (config.getDissolveButton() != null && slot == config.getDissolveButton().getSlot()) {
             if (plugin.getPermissionManager().hasPermission(player.getUniqueId(), nation, "can_delete_nation")) {
                 player.closeInventory();
@@ -152,7 +145,7 @@ public class ManageNationMenu {
             return;
         }
 
-        // Rename button
+
         if (config.getRenameButton() != null && slot == config.getRenameButton().getSlot()) {
             if (nation.getChief().equals(player.getUniqueId())) {
                 openRenameSign(player, nation);
@@ -160,14 +153,12 @@ public class ManageNationMenu {
             return;
         }
 
-        // Tax History button
         if (config.getTaxHistoryButton() != null && slot == config.getTaxHistoryButton().getSlot()) {
             player.closeInventory();
             menuManager.openTaxHistoryMenu(player, 0);
             return;
         }
 
-        // Custom items
         for (MenuConfig.CustomMenuItem customItem : config.getManageNationCustomItems()) {
             if (slot == customItem.getSlot()) {
                 player.closeInventory();
@@ -206,18 +197,14 @@ public class ManageNationMenu {
     private void renameNation(Player player, Nation nation, String newName) {
         String oldName = nation.getName();
 
-        // Update nation name
         nation.setName(newName);
 
-        // Update nation manager mappings
         plugin.getNationManager().deleteNation(oldName);
 
-        // Save to database
         plugin.getPersistenceService().saveNation(nation);
 
         player.sendMessage(color("&aNation renamed from &e" + oldName + " &ato &e" + newName));
 
-        // Reopen menu
         plugin.getFoliaLib().getScheduler().runLater(() -> {
             menuManager.openManageNationMenu(player);
         }, 1L);

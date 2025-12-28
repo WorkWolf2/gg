@@ -48,9 +48,9 @@ public class HNationsCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
-            SubCommand info = subCommands.get("info");
-            if (info != null) {
-                info.execute(sender, args);
+            SubCommand manage = subCommands.get("managenations");
+            if (manage != null) {
+                manage.execute(sender, args);
             }
             return true;
         }
